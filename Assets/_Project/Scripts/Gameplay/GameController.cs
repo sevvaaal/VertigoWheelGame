@@ -1,3 +1,5 @@
+using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 
 // The game's referee: tracks the zone, decides what a spin result means, keeps the inventory and decides when leaving is allowed.
@@ -12,6 +14,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private CollectPopup collectPopup;
     [SerializeField] private LeaveButtonView leaveButton;
     [SerializeField] private ZoneBarView zoneBar;
+    [SerializeField] private RewardFlyEffect rewardFly;
     [SerializeField] private ZoneConfigSO zoneConfig;
 
     [Tooltip("For testing: the zone a run starts at. Set to 29 to reach the super zone in one spin.")]
@@ -20,6 +23,9 @@ public class GameController : MonoBehaviour
     private Inventory inventory;
     private ZoneRules zoneRules;
     private int currentZone;
+
+    // True while a spin's result is still playing (flash, flying icon, shake). Spin and Leave wait for it.
+    private bool isShowingResult;
 
     private void Awake()
     {
@@ -39,12 +45,30 @@ public class GameController : MonoBehaviour
 
     private void HandleSpinCompleted(SliceData slice)
     {
-        if (slice.IsBomb)
-        {
-            inventory.Clear();
-            bombPopup.Show();
-            return;
-        }
+        isShowingResult = true;
+        StartCoroutine(slice.IsBomb ? PlayBombSequence() : PlayRewardSequence(slice));
+    }
+
+    // Shake the wheel, then lose everything.
+    private IEnumerator PlayBombSequence()
+    {
+        yield return wheelView.PlayBombShake().WaitForCompletion();
+
+        inventory.Clear();
+        bombPopup.Show();
+        isShowingResult = false;
+    }
+
+    // Flash and punch the winning slice, fly its icon into the panel, and only then add the reward and advance.
+    private IEnumerator PlayRewardSequence(SliceData slice)
+    {
+        int sliceIndex = wheelSpinner.WinningIndex;
+        Vector3 iconStart = wheelView.GetSlicePosition(sliceIndex);
+
+        yield return wheelView.PlayWinEffect(sliceIndex).WaitForCompletion();
+
+        Transform flyTarget = rewardList.GetFlyTarget(slice.Reward.Type);
+        yield return rewardFly.Fly(slice.Reward.Type.Icon, iconStart, flyTarget).WaitForCompletion();
 
         // The slice stores the base amount; the reward actually won grows with the zone.
         int amount = zoneRules.ScaleAmount(slice.Reward.Amount, currentZone);
@@ -52,6 +76,10 @@ public class GameController : MonoBehaviour
 
         currentZone++;
         ShowZone(true);
+
+        isShowingResult = false;
+        wheelSpinner.SetSpinAvailable(true);
+        UpdateLeaveButton();
     }
 
     // Puts the right wheel on screen for the current zone: bronze with a bomb, silver every 5th, golden every 30th.
@@ -75,7 +103,7 @@ public class GameController : MonoBehaviour
 
     private bool CanLeave()
     {
-        return zoneRules.CanLeave(zoneRules.GetZoneType(currentZone), wheelSpinner.IsSpinning);
+        return !isShowingResult && zoneRules.CanLeave(zoneRules.GetZoneType(currentZone), wheelSpinner.IsSpinning);
     }
 
     // Walk away with everything collected so far.
@@ -97,5 +125,8 @@ public class GameController : MonoBehaviour
         inventory.Clear();
         currentZone = FirstZone;
         ShowZone(false);
+
+        isShowingResult = false;
+        wheelSpinner.SetSpinAvailable(true);
     }
 }

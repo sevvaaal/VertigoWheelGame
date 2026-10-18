@@ -15,6 +15,12 @@ public class RewardListView : MonoBehaviour
         inventory.Cleared += HandleCleared;
     }
 
+    // Where a won reward's icon should fly to: its own row, or the panel itself if this type has no row yet.
+    public Transform GetFlyTarget(RewardTypeSO type)
+    {
+        return rows.TryGetValue(type, out RewardRowView row) ? row.transform : rowContainer;
+    }
+
     private void HandleAmountChanged(RewardTypeSO type, int total)
     {
         if (!rows.TryGetValue(type, out RewardRowView row))

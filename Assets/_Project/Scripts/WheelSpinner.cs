@@ -20,6 +20,9 @@ public class WheelSpinner : MonoBehaviour
 
     public bool IsSpinning { get; private set; }
 
+    // Which slice the last spin landed on, so the view can highlight it.
+    public int WinningIndex { get; private set; }
+
     private void Awake()
     {
         spinButton.onClick.AddListener(Spin);
@@ -39,21 +42,26 @@ public class WheelSpinner : MonoBehaviour
 
         // Decide first, then animate the wheel so the winning slice ends under the pointer.
         int sliceCount = wheelData.Slices.Count;
-        int winningIndex = UnityEngine.Random.Range(0, sliceCount);
-        winningSlice = wheelData.Slices[winningIndex];
+        WinningIndex = UnityEngine.Random.Range(0, sliceCount);
+        winningSlice = wheelData.Slices[WinningIndex];
 
         float anglePerSlice = 360f / sliceCount;
-        float targetAngle = winningIndex * anglePerSlice - fullTurns * 360f;
+        float targetAngle = WinningIndex * anglePerSlice - fullTurns * 360f;
 
         wheel.DORotate(new Vector3(0f, 0f, targetAngle), spinDuration, RotateMode.FastBeyond360)
             .SetEase(spinEase)
             .OnComplete(OnSpinFinished);
     }
 
+    // SPIN stays off after landing: the GameController turns it back on once the result has finished playing.
+    public void SetSpinAvailable(bool isAvailable)
+    {
+        spinButton.interactable = isAvailable;
+    }
+
     private void OnSpinFinished()
     {
         IsSpinning = false;
-        spinButton.interactable = true;
         SpinCompleted?.Invoke(winningSlice);
     }
 }
