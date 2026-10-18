@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2c57fd530b7487c889100a7ab59edb, type: 3}
   m_Name: BronzeWheel
   m_EditorClassIdentifier: Assembly-CSharp::WheelSO
+  baseSprite: {fileID: -7416167051008218582, guid: 9bd2668b137f048a1ae2dcb0318a1f83, type: 3}
+  indicatorSprite: {fileID: 5759410588988491854, guid: 9b450759e06074e5cb9f07f1f96d205f, type: 3}
   bombIcon: {fileID: -6860072587592751284, guid: 290bd238ed7c7483f9b36bbc2860bc28, type: 3}
   slices:
   - isBomb: 1
