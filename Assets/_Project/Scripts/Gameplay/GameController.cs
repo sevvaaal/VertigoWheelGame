@@ -9,6 +9,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private WheelView wheelView;
     [SerializeField] private RewardListView rewardList;
     [SerializeField] private BombPopup bombPopup;
+    [SerializeField] private ZoneBarView zoneBar;
     [SerializeField] private ZoneConfigSO zoneConfig;
 
     [Tooltip("For testing: the zone a run starts at. Set to 29 to reach the super zone in one spin.")]
@@ -28,7 +29,7 @@ public class GameController : MonoBehaviour
         bombPopup.RestartClicked += Restart;
 
         currentZone = startZone;
-        ShowZone();
+        ShowZone(false);
     }
 
     private void HandleSpinCompleted(SliceData slice)
@@ -45,19 +46,19 @@ public class GameController : MonoBehaviour
         inventory.Add(new Reward(slice.Reward.Type, amount));
 
         currentZone++;
-        ShowZone();
+        ShowZone(true);
     }
 
     // Puts the right wheel on screen for the current zone: bronze with a bomb, silver every 5th, golden every 30th.
-    private void ShowZone()
+    // animate: slide the zone bar when advancing; jump straight there at the start and on restart.
+    private void ShowZone(bool animate)
     {
         ZoneType type = zoneRules.GetZoneType(currentZone);
         WheelSO wheel = zoneConfig.GetWheel(type);
 
         wheelView.Show(wheel, zoneRules, currentZone);
         wheelSpinner.SetWheel(wheel);
-
-        Debug.Log($"Zone {currentZone}: {type}");
+        zoneBar.Show(currentZone, zoneRules, animate);
     }
 
     // Start a new run from scratch: no rewards, back to the first zone.
@@ -66,6 +67,6 @@ public class GameController : MonoBehaviour
         bombPopup.Hide();
         inventory.Clear();
         currentZone = FirstZone;
-        ShowZone();
+        ShowZone(false);
     }
 }

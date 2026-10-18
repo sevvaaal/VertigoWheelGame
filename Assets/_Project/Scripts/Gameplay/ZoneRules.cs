@@ -31,6 +31,18 @@ public class ZoneRules
         return ZoneType.Normal;
     }
 
+    // The first zone of this type at or after fromZone. Used for the "next safe / next super zone" labels.
+    public int GetNextZone(int fromZone, ZoneType type)
+    {
+        int zone = fromZone;
+        while (GetZoneType(zone) != type)
+        {
+            zone++;
+        }
+
+        return zone;
+    }
+
     // Rewards get better every zone: zone 1 pays the base amount, each later zone a bit more.
     public float GetRewardMultiplier(int zone)
     {
