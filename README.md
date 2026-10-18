@@ -52,7 +52,7 @@ The wheel **decides the winning slice first**, then DOTween rotates the wheel so
 - **Inheritance:** `PopupView` holds the shared show, hide and pop-in animation. `BombPopup` and `CollectPopup` only add their own content.
 - **Object reuse:** the zone bar reuses the same 9 cells and slides them, instead of creating new objects every zone.
 
-## Vertigo checklist
+## Checklist
 | Requirement | How it is handled |
 |---|---|
 | Slice contents changeable from the editor | `WheelSO` assets (Bronze, Silver, Golden) list their slices; `ZoneConfig` picks the wheel per zone type |
@@ -71,8 +71,6 @@ The wheel **decides the winning slice first**, then DOTween rotates the wheel so
 
 ## Rule interpretations
 - **Leaving.** The case says *"Player can choose to leave when wheel is not spinning and when the zone is safe or at the super zone"* and also *"Before spinning the wheel, the player has a chance to walk away and collect all the rewards they received until that point"*. I chose the second reading because that is how the wheel works in Critical Strike itself: Leave is available on any zone, but never while the wheel is spinning or a result is still playing. Changing it back is one line in `ZoneRules.CanLeave`.
-- **Zone 30.** It is divisible by 5 too, so super zones are checked first (covered by a test).
-- **Continue with currency** was a bonus in the brief and is not implemented: hitting the bomb restarts the run.
 
 ## Android build notes
 - IL2CPP, ARM64, landscape only (both landscape sides).
