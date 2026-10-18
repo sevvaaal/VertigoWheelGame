@@ -40,7 +40,12 @@ public class GameController : MonoBehaviour
         bombPopup.RestartClicked += Restart;
         collectPopup.PlayAgainClicked += Restart;
         leaveButton.Clicked += Leave;
+    }
 
+    // Showing the first zone talks to other objects (wheel, zone bar, buttons), so it waits for Start:
+    // by then every object has finished its own Awake.
+    private void Start()
+    {
         currentZone = startZone;
         ShowZone(false);
     }
@@ -109,7 +114,7 @@ public class GameController : MonoBehaviour
         UpdateLeaveButton();
     }
 
-    // Leave is only possible on a safe or super zone, and never while the wheel is spinning.
+    // Leave is possible before any spin, never while the wheel is spinning or a result is still playing.
     private void UpdateLeaveButton()
     {
         leaveButton.SetAvailable(CanLeave());
@@ -117,7 +122,7 @@ public class GameController : MonoBehaviour
 
     private bool CanLeave()
     {
-        return !isShowingResult && zoneRules.CanLeave(zoneRules.GetZoneType(currentZone), wheelSpinner.IsSpinning);
+        return !isShowingResult && zoneRules.CanLeave(wheelSpinner.IsSpinning);
     }
 
     // Walk away with everything collected so far.

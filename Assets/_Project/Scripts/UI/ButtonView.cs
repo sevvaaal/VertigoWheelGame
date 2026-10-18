@@ -8,6 +8,10 @@ using UnityEngine.UI;
 public class ButtonView : MonoBehaviour
 {
     [SerializeField] private Button button;
+    [SerializeField] private float unavailableAlpha = 0.4f;
+
+    // Fades the button and its text together, so "not available right now" is obvious.
+    private CanvasGroup canvasGroup;
 
     public event Action Clicked;
 
@@ -25,6 +29,14 @@ public class ButtonView : MonoBehaviour
     public void SetAvailable(bool isAvailable)
     {
         button.interactable = isAvailable;
+
+        // Fetched here rather than in Awake: the GameController may call this before this button's Awake has run.
+        if (canvasGroup == null && !TryGetComponent(out canvasGroup))
+        {
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+
+        canvasGroup.alpha = isAvailable ? 1f : unavailableAlpha;
     }
 
     private void HandleClicked()

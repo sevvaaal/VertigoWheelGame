@@ -54,9 +54,10 @@ public class ZoneRules
         return Math.Max(1, (int)Math.Round(baseAmount * GetRewardMultiplier(zone)));
     }
 
-    // The player may only walk away with the rewards on a safe or super zone, and never while the wheel is spinning.
-    public bool CanLeave(ZoneType type, bool isSpinning)
+    // The player may walk away with the rewards before any spin, on any zone, but never while the wheel is spinning.
+    // Design choice, based on the case's "Before spinning the wheel, the player has a chance to walk away".
+    public bool CanLeave(bool isSpinning)
     {
-        return !isSpinning && type != ZoneType.Normal;
+        return !isSpinning;
     }
 }

@@ -29,13 +29,11 @@ public class ZoneRulesTests
         Assert.AreEqual(ZoneType.Super, rules.GetZoneType(30));
     }
 
-    [TestCase(ZoneType.Safe, false, true)]
-    [TestCase(ZoneType.Super, false, true)]
-    [TestCase(ZoneType.Safe, true, false)]
-    [TestCase(ZoneType.Normal, false, false)]
-    public void CanLeave_OnlyOnSafeOrSuperZonesWhileStill(ZoneType type, bool isSpinning, bool expected)
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    public void CanLeave_OnlyWhileWheelIsStill(bool isSpinning, bool expected)
     {
-        Assert.AreEqual(expected, rules.CanLeave(type, isSpinning));
+        Assert.AreEqual(expected, rules.CanLeave(isSpinning));
     }
 
     [Test]
