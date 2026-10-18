@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// The game's referee: tracks the zone, decides what a spin result means and keeps the inventory.
+// The game's referee: tracks the zone, decides what a spin result means, keeps the inventory and decides when leaving is allowed.
 public class GameController : MonoBehaviour
 {
     private const int FirstZone = 1;
@@ -9,6 +9,8 @@ public class GameController : MonoBehaviour
     [SerializeField] private WheelView wheelView;
     [SerializeField] private RewardListView rewardList;
     [SerializeField] private BombPopup bombPopup;
+    [SerializeField] private CollectPopup collectPopup;
+    [SerializeField] private LeaveButtonView leaveButton;
     [SerializeField] private ZoneBarView zoneBar;
     [SerializeField] private ZoneConfigSO zoneConfig;
 
@@ -25,8 +27,11 @@ public class GameController : MonoBehaviour
         zoneRules = new ZoneRules(zoneConfig.SafeZoneInterval, zoneConfig.SuperZoneInterval, zoneConfig.RewardGrowthPerZone);
         rewardList.Bind(inventory);
 
+        wheelSpinner.SpinStarted += UpdateLeaveButton;
         wheelSpinner.SpinCompleted += HandleSpinCompleted;
         bombPopup.RestartClicked += Restart;
+        collectPopup.PlayAgainClicked += Restart;
+        leaveButton.Clicked += Leave;
 
         currentZone = startZone;
         ShowZone(false);
@@ -59,12 +64,36 @@ public class GameController : MonoBehaviour
         wheelView.Show(wheel, zoneRules, currentZone);
         wheelSpinner.SetWheel(wheel);
         zoneBar.Show(currentZone, zoneRules, animate);
+        UpdateLeaveButton();
+    }
+
+    // Leave is only possible on a safe or super zone, and never while the wheel is spinning.
+    private void UpdateLeaveButton()
+    {
+        leaveButton.SetAvailable(CanLeave());
+    }
+
+    private bool CanLeave()
+    {
+        return zoneRules.CanLeave(zoneRules.GetZoneType(currentZone), wheelSpinner.IsSpinning);
+    }
+
+    // Walk away with everything collected so far.
+    private void Leave()
+    {
+        if (!CanLeave())
+        {
+            return;
+        }
+
+        collectPopup.Show(inventory.Amounts);
     }
 
     // Start a new run from scratch: no rewards, back to the first zone.
     private void Restart()
     {
         bombPopup.Hide();
+        collectPopup.Hide();
         inventory.Clear();
         currentZone = FirstZone;
         ShowZone(false);
