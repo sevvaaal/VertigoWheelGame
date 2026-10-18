@@ -1,12 +1,11 @@
 using System;
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.UI;
 
-// Spins the wheel and announces which slice it landed on. It does not decide what the result means.
+// Spins the wheel and announces which slice it landed on. It has no button and decides nothing about the result:
+// the GameController asks it to spin and decides what the landed slice means.
 public class WheelSpinner : MonoBehaviour
 {
-    [SerializeField] private Button spinButton;
     [SerializeField] private RectTransform wheel;
     [SerializeField] private float spinDuration = 3f;
     [SerializeField] private int fullTurns = 5;
@@ -23,21 +22,15 @@ public class WheelSpinner : MonoBehaviour
     // Which slice the last spin landed on, so the view can highlight it.
     public int WinningIndex { get; private set; }
 
-    private void Awake()
-    {
-        spinButton.onClick.AddListener(Spin);
-    }
-
     // The wheel changes with the zone (bronze, silver, golden), so the winner is always picked from the current one.
     public void SetWheel(WheelSO wheel)
     {
         wheelData = wheel;
     }
 
-    private void Spin()
+    public void Spin()
     {
         IsSpinning = true;
-        spinButton.interactable = false;
         SpinStarted?.Invoke();
 
         // Decide first, then animate the wheel so the winning slice ends under the pointer.
@@ -51,12 +44,6 @@ public class WheelSpinner : MonoBehaviour
         wheel.DORotate(new Vector3(0f, 0f, targetAngle), spinDuration, RotateMode.FastBeyond360)
             .SetEase(spinEase)
             .OnComplete(OnSpinFinished);
-    }
-
-    // SPIN stays off after landing: the GameController turns it back on once the result has finished playing.
-    public void SetSpinAvailable(bool isAvailable)
-    {
-        spinButton.interactable = isAvailable;
     }
 
     private void OnSpinFinished()

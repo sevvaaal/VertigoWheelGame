@@ -2,9 +2,10 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-// The Leave button. It only turns itself on or off and announces clicks; the GameController decides when leaving is allowed.
+// A game button (Spin, Leave). It only turns itself on or off and announces clicks;
+// the GameController decides when each action is allowed and what it does.
 [RequireComponent(typeof(Button))]
-public class LeaveButtonView : MonoBehaviour
+public class ButtonView : MonoBehaviour
 {
     [SerializeField] private Button button;
 

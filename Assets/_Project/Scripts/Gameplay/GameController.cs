@@ -12,7 +12,8 @@ public class GameController : MonoBehaviour
     [SerializeField] private RewardListView rewardList;
     [SerializeField] private BombPopup bombPopup;
     [SerializeField] private CollectPopup collectPopup;
-    [SerializeField] private LeaveButtonView leaveButton;
+    [SerializeField] private ButtonView spinButton;
+    [SerializeField] private ButtonView leaveButton;
     [SerializeField] private ZoneBarView zoneBar;
     [SerializeField] private RewardFlyEffect rewardFly;
     [SerializeField] private ZoneConfigSO zoneConfig;
@@ -33,6 +34,7 @@ public class GameController : MonoBehaviour
         zoneRules = new ZoneRules(zoneConfig.SafeZoneInterval, zoneConfig.SuperZoneInterval, zoneConfig.RewardGrowthPerZone);
         rewardList.Bind(inventory);
 
+        spinButton.Clicked += Spin;
         wheelSpinner.SpinStarted += UpdateLeaveButton;
         wheelSpinner.SpinCompleted += HandleSpinCompleted;
         bombPopup.RestartClicked += Restart;
@@ -41,6 +43,18 @@ public class GameController : MonoBehaviour
 
         currentZone = startZone;
         ShowZone(false);
+    }
+
+    // SPIN is only allowed when the wheel is still and the last result has finished playing.
+    private void Spin()
+    {
+        if (wheelSpinner.IsSpinning || isShowingResult)
+        {
+            return;
+        }
+
+        spinButton.SetAvailable(false);
+        wheelSpinner.Spin();
     }
 
     private void HandleSpinCompleted(SliceData slice)
@@ -78,7 +92,7 @@ public class GameController : MonoBehaviour
         ShowZone(true);
 
         isShowingResult = false;
-        wheelSpinner.SetSpinAvailable(true);
+        spinButton.SetAvailable(true);
         UpdateLeaveButton();
     }
 
@@ -127,6 +141,6 @@ public class GameController : MonoBehaviour
         ShowZone(false);
 
         isShowingResult = false;
-        wheelSpinner.SetSpinAvailable(true);
+        spinButton.SetAvailable(true);
     }
 }
