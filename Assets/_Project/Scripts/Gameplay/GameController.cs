@@ -5,6 +5,7 @@ public class GameController : MonoBehaviour
 {
     [SerializeField] private WheelSpinner wheelSpinner;
     [SerializeField] private RewardListView rewardList;
+    [SerializeField] private BombPopup bombPopup;
 
     private Inventory inventory;
 
@@ -14,6 +15,7 @@ public class GameController : MonoBehaviour
         rewardList.Bind(inventory);
 
         wheelSpinner.SpinCompleted += HandleSpinCompleted;
+        bombPopup.RestartClicked += Restart;
     }
 
     private void HandleSpinCompleted(SliceData slice)
@@ -21,10 +23,17 @@ public class GameController : MonoBehaviour
         if (slice.IsBomb)
         {
             inventory.Clear();
+            bombPopup.Show();
         }
         else
         {
             inventory.Add(slice.Reward);
         }
+    }
+
+    // Start a new run from scratch. Zones will be reset here too once they exist.
+    private void Restart()
+    {
+        bombPopup.Hide();
     }
 }
