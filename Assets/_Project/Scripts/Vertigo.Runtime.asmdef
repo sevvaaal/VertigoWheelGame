@@ -1,0 +1,9 @@
+{
+    "name": "Vertigo.Runtime",
+    "references": [
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "DOTween.Modules"
+    ],
+    "autoReferenced": true
+}
