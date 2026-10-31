@@ -1,11 +1,40 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
-[CreateAssetMenu(fileName = "RewardType", menuName = "Vertigo/Reward Type")]
-public class RewardTypeSO : ScriptableObject
+namespace Vertigo.Data
 {
-    [SerializeField] private string displayName;
-    [SerializeField] private Sprite icon;
+    [CreateAssetMenu(fileName = "RewardType", menuName = "Vertigo/Reward Type")]
+    public class RewardTypeSO : ScriptableObject
+    {
+        #region Serialized Fields
 
-    public string DisplayName => displayName;
-    public Sprite Icon => icon;
+        [FormerlySerializedAs("displayName")]
+        [SerializeField] private string _displayName;
+
+        [FormerlySerializedAs("icon")]
+        [SerializeField] private Sprite _icon;
+
+        [SerializeField] private RewardKind _kind = RewardKind.Item;
+
+        #endregion
+
+        #region Properties
+
+        public string DisplayName
+        {
+            get { return _displayName; }
+        }
+
+        public Sprite Icon
+        {
+            get { return _icon; }
+        }
+
+        public RewardKind Kind
+        {
+            get { return _kind; }
+        }
+
+        #endregion
+    }
 }

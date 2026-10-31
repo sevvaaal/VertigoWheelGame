@@ -17,9 +17,14 @@ namespace Vertigo.Tests.EditMode
 
         #region Public Methods
 
-        public RewardTypeSO CreateRewardType()
+        public RewardTypeSO CreateRewardType(RewardKind kind = RewardKind.Item)
         {
-            return Track(ScriptableObject.CreateInstance<RewardTypeSO>());
+            RewardTypeSO rewardType = Track(ScriptableObject.CreateInstance<RewardTypeSO>());
+
+            SerializedObject serialized = new SerializedObject(rewardType);
+            serialized.FindProperty("_kind").enumValueIndex = (int)kind;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return rewardType;
         }
 
         public WheelSO CreateWheel(int rewardCount, params int[] bombSlots)
@@ -33,8 +38,8 @@ namespace Vertigo.Tests.EditMode
             for (int i = 0; i < rewardCount; i++)
             {
                 SerializedProperty reward = rewards.GetArrayElementAtIndex(i);
-                reward.FindPropertyRelative("type").objectReferenceValue = rewardType;
-                reward.FindPropertyRelative("amount").intValue = 1;
+                reward.FindPropertyRelative("_type").objectReferenceValue = rewardType;
+                reward.FindPropertyRelative("_amount").intValue = 1;
             }
 
             SerializedProperty slots = serialized.FindProperty("_bombSlots");

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Vertigo.Core;
 using Vertigo.Data;
+using Vertigo.Economy;
 using Vertigo.Gameplay;
 using Vertigo.UI;
 
@@ -21,6 +22,8 @@ namespace Vertigo.Bootstrap
         [SerializeField] private LeaveButtonView _leaveButton;
         [SerializeField] private BombPopup _bombPopup;
         [SerializeField] private CollectPopup _collectPopup;
+        [SerializeField] private RewardListView _rewardList;
+        [SerializeField] private WalletView _walletView;
 
         #endregion
 
@@ -40,13 +43,17 @@ namespace Vertigo.Bootstrap
             EventBus eventBus = new EventBus();
             GameStateMachine stateMachine = new GameStateMachine(eventBus);
             SpinResolver spinResolver = new SpinResolver(new UnityRandomSource());
+            RunInventory runInventory = new RunInventory(eventBus);
+            Wallet wallet = new Wallet(eventBus);
 
             _wheelSpinner.Construct(eventBus);
             _spinButton.Construct(eventBus);
             _leaveButton.Construct(eventBus);
             _bombPopup.Construct(eventBus);
             _collectPopup.Construct(eventBus);
-            _gameController.Construct(eventBus, stateMachine, spinResolver);
+            _rewardList.Construct(eventBus);
+            _walletView.Construct(eventBus);
+            _gameController.Construct(eventBus, stateMachine, spinResolver, runInventory, wallet);
         }
 
         #endregion

@@ -1,9 +1,11 @@
 using System.Collections;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Vertigo.Core;
 using Vertigo.Data;
+using Vertigo.Economy;
 using Vertigo.UI;
 
 namespace Vertigo.Gameplay
@@ -44,7 +46,8 @@ namespace Vertigo.Gameplay
         private IEventBus _eventBus;
         private GameStateMachine _stateMachine;
         private SpinResolver _spinResolver;
-        private Inventory _inventory;
+        private RunInventory _runInventory;
+        private IWallet _wallet;
         private ZoneRules _zoneRules;
         private WheelSO _currentWheel;
         private int _currentZone;
@@ -82,15 +85,16 @@ namespace Vertigo.Gameplay
 
         #region Public Methods
 
-        public void Construct(IEventBus eventBus, GameStateMachine stateMachine, SpinResolver spinResolver)
+        public void Construct(IEventBus eventBus, GameStateMachine stateMachine, SpinResolver spinResolver,
+            RunInventory runInventory, IWallet wallet)
         {
             _eventBus = eventBus;
             _stateMachine = stateMachine;
             _spinResolver = spinResolver;
+            _runInventory = runInventory;
+            _wallet = wallet;
 
-            _inventory = new Inventory();
             _zoneRules = new ZoneRules(_zoneConfig.SpecialZoneTypes, _zoneConfig.DefaultZoneType, _zoneConfig.RewardGrowthPerZone);
-            _rewardList.Bind(_inventory);
 
             _eventBus.Subscribe<SpinRequestedEvent>(HandleSpinRequested);
             _eventBus.Subscribe<SpinFinishedEvent>(HandleSpinFinished);
@@ -130,8 +134,11 @@ namespace Vertigo.Gameplay
                 return;
             }
 
-            // The rewards go out first, so the collect popup has its rows ready when the state shows it.
-            _eventBus.Publish(new RewardsCollectedEvent(_inventory.Amounts));
+            // A copy, because the run inventory is cleared on Play Again while the popup and wallet still use it.
+            // The rewards go out before the state changes, so the collect popup has its rows ready when it appears.
+            Dictionary<RewardTypeSO, int> collected = new Dictionary<RewardTypeSO, int>(_runInventory.Amounts);
+            _eventBus.Publish(new RewardsCollectedEvent(collected));
+            _wallet.Deposit(collected);
             _stateMachine.TryLeave();
         }
 
@@ -143,7 +150,7 @@ namespace Vertigo.Gameplay
             }
 
             StopResultCoroutine();
-            _inventory.Clear();
+            _runInventory.Clear();
             _currentZone = FIRST_ZONE;
             ShowZone(false);
         }
@@ -156,7 +163,7 @@ namespace Vertigo.Gameplay
         {
             yield return _wheelView.PlayBombShake().WaitForCompletion();
 
-            _inventory.Clear();
+            _runInventory.Clear();
             _resultCoroutine = null;
             _stateMachine.Bust();
         }
@@ -172,7 +179,7 @@ namespace Vertigo.Gameplay
             yield return _rewardFly.Fly(slice.Reward.Type.Icon, iconStart, flyTarget).WaitForCompletion();
 
             int amount = _zoneRules.ScaleAmount(slice.Reward.Amount, _currentZone);
-            _inventory.Add(new Reward(slice.Reward.Type, amount));
+            _runInventory.Add(new Reward(slice.Reward.Type, amount));
 
             _currentZone++;
             ShowZone(true);

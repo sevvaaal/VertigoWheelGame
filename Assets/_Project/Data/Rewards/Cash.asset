@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28a109ba795eb4d5bb192db4dbc3aca9, type: 3}
   m_Name: Cash
   m_EditorClassIdentifier: Assembly-CSharp::RewardTypeSO
-  displayName: Cash
-  icon: {fileID: 7347395048315886003, guid: df46885398c3d4b25a344a3b90a025fe, type: 3}
+  _displayName: Cash
+  _icon: {fileID: 7347395048315886003, guid: df46885398c3d4b25a344a3b90a025fe, type: 3}
+  _kind: 1

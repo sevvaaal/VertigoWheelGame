@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Vertigo.Core;
+using Vertigo.Data;
 
 namespace Vertigo.Gameplay
 {

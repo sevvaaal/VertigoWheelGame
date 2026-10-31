@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Vertigo.Data;
 using Vertigo.Gameplay;
 
 namespace Vertigo.UI
