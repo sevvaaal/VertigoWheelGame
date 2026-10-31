@@ -145,6 +145,7 @@ GameObject:
   m_Component:
   - component: {fileID: 60055374}
   - component: {fileID: 60055373}
+  - component: {fileID: 60055375}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -164,12 +165,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88150eaacecb94986bc32b1f1f433b6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameController
-  _wheelSpinner: {fileID: 153925737}
-  _wheelView: {fileID: 153925738}
-  _rewardList: {fileID: 564843564}
-  _zoneBar: {fileID: 56396206}
-  _rewardFly: {fileID: 2004471306}
-  _zoneConfig: {fileID: 11400000, guid: ec0438af8ebd44e59ad3f80b3f3fa728, type: 2}
 --- !u!4 &60055374
 Transform:
   m_ObjectHideFlags: 0
@@ -185,6 +180,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &60055375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 60055372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6f902d99300a4d9c845862a6583499d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vertigo.Runtime::Vertigo.UI.SpinResultPresenter
+  _wheelView: {fileID: 153925738}
+  _rewardList: {fileID: 564843564}
+  _rewardFly: {fileID: 2004471306}
 --- !u!1 &153925733
 GameObject:
   m_ObjectHideFlags: 0
@@ -290,15 +300,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b63b6392b10b444b49998c3fcdb1c50d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WheelView
-  baseImage: {fileID: 153925735}
-  indicatorImage: {fileID: 1837803934}
-  sliceContainer: {fileID: 153925734}
-  slicePrefab: {fileID: 3854146514191083937, guid: fadf8915b10414c62aaadb6da85b98b5, type: 3}
-  sliceRadius: 145
-  glow: {fileID: 305834616}
-  flash: {fileID: 1913944477}
-  glowTurnDuration: 20
-  effectDuration: 0.4
+  _baseImage: {fileID: 153925735}
+  _indicatorImage: {fileID: 1837803934}
+  _sliceContainer: {fileID: 153925734}
+  _slicePrefab: {fileID: 3854146514191083937, guid: fadf8915b10414c62aaadb6da85b98b5, type: 3}
+  _sliceRadius: 145
+  _glow: {fileID: 305834616}
+  _flash: {fileID: 1913944477}
+  _glowTurnDuration: 20
+  _glowBreathDuration: 1.2
+  _glowBreathScale: 1.08
+  _effectDuration: 0.4
+  _flashStartScale: 0.5
+  _flashEndScale: 1.6
+  _slicePunch: 0.4
+  _bombShakeDuration: 0.5
+  _bombShakeStrength: 25
+  _bombShakeVibrato: 30
 --- !u!1 &157070797
 GameObject:
   m_ObjectHideFlags: 0
@@ -1116,6 +1134,9 @@ MonoBehaviour:
   _zoneConfig: {fileID: 11400000, guid: ec0438af8ebd44e59ad3f80b3f3fa728, type: 2}
   _gameController: {fileID: 60055373}
   _wheelSpinner: {fileID: 153925737}
+  _wheelView: {fileID: 153925738}
+  _zoneBar: {fileID: 56396206}
+  _resultPresenter: {fileID: 60055375}
   _spinButton: {fileID: 1332733066}
   _leaveButton: {fileID: 548014142}
   _bombPopup: {fileID: 1657148644}
@@ -2447,6 +2468,38 @@ PrefabInstance:
     - target: {fileID: 5551436292465753582, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562331195011215399, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 3439329279
+      objectReference: {fileID: 0}
+    - target: {fileID: 7562331195011215399, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 8417978377958866098, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8417978377958866098, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8417978377958866098, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8417978377958866098, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8417978377958866098, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 130
+      objectReference: {fileID: 0}
+    - target: {fileID: 8417978377958866098, guid: a1fd3c0a957d34ca9a7231d9efd45a9a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -25
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -6,7 +6,7 @@ using Vertigo.Data;
 namespace Vertigo.Gameplay
 {
     // What the player has won in the current run. Lost on a bomb; moved into the wallet on Leave.
-    public sealed class RunInventory
+    public sealed class RunInventory : IRunInventory
     {
         #region Fields
 

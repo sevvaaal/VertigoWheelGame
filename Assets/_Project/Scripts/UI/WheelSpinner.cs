@@ -8,7 +8,7 @@ using Vertigo.Gameplay;
 namespace Vertigo.UI
 {
     // Only rotates the wheel to the slice it is given. Which slice wins is decided by SpinResolver.
-    public class WheelSpinner : MonoBehaviour
+    public class WheelSpinner : MonoBehaviour, IWheelSpinner
     {
         #region Constants
 

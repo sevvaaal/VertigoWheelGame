@@ -1,56 +1,26 @@
 using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Vertigo.Core;
 using Vertigo.Data;
 using Vertigo.Economy;
-using Vertigo.UI;
 
 namespace Vertigo.Gameplay
 {
-    // Runs the game flow: reacts to requests, asks the state machine what is allowed, and plays the result sequences.
+    // Runs the game flow and nothing else: reacts to requests, asks the state machine what is allowed,
+    // and moves the run forward. Every dependency is handed in by the GameBootstrapper.
     public class GameController : MonoBehaviour
     {
-        #region Constants
-
-        private const int FIRST_ZONE = 1;
-
-        #endregion
-
-        #region Serialized Fields
-
-        [FormerlySerializedAs("wheelSpinner")]
-        [SerializeField] private WheelSpinner _wheelSpinner;
-
-        [FormerlySerializedAs("wheelView")]
-        [SerializeField] private WheelView _wheelView;
-
-        [FormerlySerializedAs("rewardList")]
-        [SerializeField] private RewardListView _rewardList;
-
-        [FormerlySerializedAs("zoneBar")]
-        [SerializeField] private ZoneBarView _zoneBar;
-
-        [FormerlySerializedAs("rewardFly")]
-        [SerializeField] private RewardFlyEffect _rewardFly;
-
-        [FormerlySerializedAs("zoneConfig")]
-        [SerializeField] private ZoneConfigSO _zoneConfig;
-
-        #endregion
-
         #region Fields
 
         private IEventBus _eventBus;
         private GameStateMachine _stateMachine;
-        private SpinResolver _spinResolver;
-        private RunInventory _runInventory;
+        private ISpinResolver _spinResolver;
+        private IWheelSpinner _wheelSpinner;
+        private ISpinResultPresenter _resultPresenter;
+        private RunProgress _runProgress;
+        private IRunInventory _runInventory;
         private IWallet _wallet;
-        private ZoneRules _zoneRules;
-        private WheelSO _currentWheel;
-        private int _currentZone;
         private int _winningSliceIndex;
         private Coroutine _resultCoroutine;
 
@@ -58,11 +28,9 @@ namespace Vertigo.Gameplay
 
         #region Unity Methods
 
-        // Showing the first zone talks to other objects, so it waits for Start, when every Awake has run.
         private void Start()
         {
-            _currentZone = FIRST_ZONE;
-            ShowZone(false);
+            PublishZone(false);
             _stateMachine.PublishCurrent();
         }
 
@@ -85,16 +53,18 @@ namespace Vertigo.Gameplay
 
         #region Public Methods
 
-        public void Construct(IEventBus eventBus, GameStateMachine stateMachine, SpinResolver spinResolver,
-            RunInventory runInventory, IWallet wallet)
+        public void Construct(IEventBus eventBus, GameStateMachine stateMachine, ISpinResolver spinResolver,
+            IWheelSpinner wheelSpinner, ISpinResultPresenter resultPresenter, RunProgress runProgress,
+            IRunInventory runInventory, IWallet wallet)
         {
             _eventBus = eventBus;
             _stateMachine = stateMachine;
             _spinResolver = spinResolver;
+            _wheelSpinner = wheelSpinner;
+            _resultPresenter = resultPresenter;
+            _runProgress = runProgress;
             _runInventory = runInventory;
             _wallet = wallet;
-
-            _zoneRules = new ZoneRules(_zoneConfig.SpecialZoneTypes, _zoneConfig.DefaultZoneType, _zoneConfig.RewardGrowthPerZone);
 
             _eventBus.Subscribe<SpinRequestedEvent>(HandleSpinRequested);
             _eventBus.Subscribe<SpinFinishedEvent>(HandleSpinFinished);
@@ -114,7 +84,7 @@ namespace Vertigo.Gameplay
             }
 
             // Decide first, then let the wheel rotate to the slice that was chosen.
-            int sliceCount = _currentWheel.Slices.Count;
+            int sliceCount = _runProgress.CurrentWheel.Slices.Count;
             _winningSliceIndex = _spinResolver.PickSliceIndex(sliceCount);
             _wheelSpinner.SpinTo(_winningSliceIndex, sliceCount);
         }
@@ -123,7 +93,7 @@ namespace Vertigo.Gameplay
         {
             _stateMachine.ShowResult();
 
-            SliceData slice = _currentWheel.Slices[_winningSliceIndex];
+            SliceData slice = _runProgress.CurrentWheel.Slices[_winningSliceIndex];
             _resultCoroutine = StartCoroutine(slice.IsBomb ? PlayBombSequenceCoroutine() : PlayRewardSequenceCoroutine(slice));
         }
 
@@ -151,8 +121,8 @@ namespace Vertigo.Gameplay
 
             StopResultCoroutine();
             _runInventory.Clear();
-            _currentZone = FIRST_ZONE;
-            ShowZone(false);
+            _runProgress.Reset();
+            PublishZone(false);
         }
 
         #endregion
@@ -161,7 +131,7 @@ namespace Vertigo.Gameplay
 
         private IEnumerator PlayBombSequenceCoroutine()
         {
-            yield return _wheelView.PlayBombShake().WaitForCompletion();
+            yield return _resultPresenter.PlayBombCoroutine();
 
             _runInventory.Clear();
             _resultCoroutine = null;
@@ -171,18 +141,11 @@ namespace Vertigo.Gameplay
         // The reward is only added once its icon has landed in the panel.
         private IEnumerator PlayRewardSequenceCoroutine(SliceData slice)
         {
-            Vector3 iconStart = _wheelView.GetSlicePosition(_winningSliceIndex);
+            yield return _resultPresenter.PlayRewardCoroutine(_winningSliceIndex, slice.Reward.Type);
 
-            yield return _wheelView.PlayWinEffect(_winningSliceIndex).WaitForCompletion();
-
-            Transform flyTarget = _rewardList.GetFlyTarget(slice.Reward.Type);
-            yield return _rewardFly.Fly(slice.Reward.Type.Icon, iconStart, flyTarget).WaitForCompletion();
-
-            int amount = _zoneRules.ScaleAmount(slice.Reward.Amount, _currentZone);
-            _runInventory.Add(new Reward(slice.Reward.Type, amount));
-
-            _currentZone++;
-            ShowZone(true);
+            _runInventory.Add(_runProgress.GetReward(slice));
+            _runProgress.Advance();
+            PublishZone(true);
 
             _resultCoroutine = null;
             _stateMachine.FinishResult();
@@ -192,14 +155,13 @@ namespace Vertigo.Gameplay
 
         #region Private Methods
 
-        // animate: slide the zone bar when advancing; jump straight there at the start and on restart.
-        private void ShowZone(bool animate)
+        private void PublishZone(bool animate)
         {
-            ZoneTypeSO zoneType = _zoneRules.GetZoneType(_currentZone);
-            _currentWheel = zoneType.GetWheel(_currentZone);
-
-            _wheelView.Show(_currentWheel, _zoneRules, _currentZone);
-            _zoneBar.Show(_currentZone, _zoneRules, animate);
+            _eventBus.Publish(new ZoneChangedEvent(
+                _runProgress.CurrentWheel,
+                _runProgress.GetSliceAmounts(),
+                _runProgress.BuildZoneBarModel(),
+                animate));
         }
 
         private void StopResultCoroutine()

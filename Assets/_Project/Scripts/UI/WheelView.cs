@@ -1,102 +1,204 @@
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Vertigo.Core;
 using Vertigo.Data;
 using Vertigo.Gameplay;
 
-// Shows a wheel: its bronze, silver or golden art, its slices with the amounts for the current zone, and its effects.
-public class WheelView : MonoBehaviour
+namespace Vertigo.UI
 {
-    [SerializeField] private Image baseImage;
-    [SerializeField] private Image indicatorImage;
-    [SerializeField] private RectTransform sliceContainer;
-    [SerializeField] private SliceView slicePrefab;
-    [SerializeField] private float sliceRadius = 145f;
-
-    // Effects live on their own child objects, never on the wheel's root (Vertigo's animator rule).
-    [SerializeField] private RectTransform glow;
-    [SerializeField] private Image flash;
-    [SerializeField] private float glowTurnDuration = 20f;
-    [SerializeField] private float effectDuration = 0.4f;
-
-    private readonly List<SliceView> sliceViews = new List<SliceView>();
-
-    private void Start()
+    // Draws the current wheel (art, slices, amounts) and plays its effects. It is told what to show, it does not calculate it.
+    public class WheelView : MonoBehaviour
     {
-        // A soft light behind the wheel that turns slowly and breathes, forever (-1 loops).
-        glow.DORotate(new Vector3(0f, 0f, 360f), glowTurnDuration, RotateMode.FastBeyond360)
-            .SetEase(Ease.Linear)
-            .SetLoops(-1);
-        glow.DOScale(1.08f, 1.2f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
+        #region Constants
 
-        flash.color = new Color(1f, 1f, 1f, 0f);
-    }
+        private const float FULL_TURN_DEGREES = 360f;
 
-    // Where the winning slice is on screen, so the flying reward icon can start from it.
-    public Vector3 GetSlicePosition(int sliceIndex)
-    {
-        return sliceViews[sliceIndex].transform.position;
-    }
+        #endregion
 
-    // A flash bursts at the pointer and the winning slice punches. Returns the tween so the caller can wait for it.
-    public Tween PlayWinEffect(int sliceIndex)
-    {
-        flash.rectTransform.localScale = Vector3.one * 0.5f;
-        flash.color = Color.white;
+        #region Serialized Fields
 
-        Sequence effect = DOTween.Sequence();
-        effect.Append(flash.rectTransform.DOScale(1.6f, effectDuration).SetEase(Ease.OutQuad));
-        effect.Join(flash.DOFade(0f, effectDuration));
-        effect.Join(sliceViews[sliceIndex].transform.DOPunchScale(Vector3.one * 0.4f, effectDuration, 6));
-        return effect;
-    }
+        [FormerlySerializedAs("baseImage")]
+        [SerializeField] private Image _baseImage;
 
-    // The wheel shakes when it lands on the bomb. Returns the tween so the caller can wait for it.
-    public Tween PlayBombShake()
-    {
-        return sliceContainer.DOShakeAnchorPos(0.5f, 25f, 30);
-    }
+        [FormerlySerializedAs("indicatorImage")]
+        [SerializeField] private Image _indicatorImage;
 
-    public void Show(WheelSO wheel, ZoneRules zoneRules, int zone)
-    {
-        baseImage.sprite = wheel.BaseSprite;
-        indicatorImage.sprite = wheel.IndicatorSprite;
+        [FormerlySerializedAs("sliceContainer")]
+        [SerializeField] private RectTransform _sliceContainer;
 
-        ClearSlices();
-        BuildSlices(wheel, zoneRules, zone);
-    }
+        [FormerlySerializedAs("slicePrefab")]
+        [SerializeField] private SliceView _slicePrefab;
 
-    private void BuildSlices(WheelSO wheel, ZoneRules zoneRules, int zone)
-    {
-        int sliceCount = wheel.Slices.Count;
-        float anglePerSlice = 360f / sliceCount;
+        [FormerlySerializedAs("sliceRadius")]
+        [Min(0f)]
+        [SerializeField] private float _sliceRadius = 145f;
 
-        for (int i = 0; i < sliceCount; i++)
+        [Header("Effects (on their own child objects, never on the root)")]
+        [FormerlySerializedAs("glow")]
+        [SerializeField] private RectTransform _glow;
+
+        [FormerlySerializedAs("flash")]
+        [SerializeField] private Image _flash;
+
+        [FormerlySerializedAs("glowTurnDuration")]
+        [Min(0.1f)]
+        [SerializeField] private float _glowTurnDuration = 20f;
+
+        [Min(0.1f)]
+        [SerializeField] private float _glowBreathDuration = 1.2f;
+
+        [Min(1f)]
+        [SerializeField] private float _glowBreathScale = 1.08f;
+
+        [FormerlySerializedAs("effectDuration")]
+        [Min(0.05f)]
+        [SerializeField] private float _effectDuration = 0.4f;
+
+        [Min(0f)]
+        [SerializeField] private float _flashStartScale = 0.5f;
+
+        [Min(0f)]
+        [SerializeField] private float _flashEndScale = 1.6f;
+
+        [Min(0f)]
+        [SerializeField] private float _slicePunch = 0.4f;
+
+        [Min(0.05f)]
+        [SerializeField] private float _bombShakeDuration = 0.5f;
+
+        [Min(0f)]
+        [SerializeField] private float _bombShakeStrength = 25f;
+
+        [Min(1)]
+        [SerializeField] private int _bombShakeVibrato = 30;
+
+        #endregion
+
+        #region Fields
+
+        // Slice objects are reused between zones; extra ones are hidden instead of destroyed.
+        private readonly List<SliceView> _sliceViews = new List<SliceView>();
+        private IEventBus _eventBus;
+        private Tween _glowTurnTween;
+        private Tween _glowBreathTween;
+        private Tween _effectTween;
+
+        #endregion
+
+        #region Unity Methods
+
+        private void Start()
         {
-            float angle = i * anglePerSlice;
+            _glowTurnTween = _glow.DORotate(new Vector3(0f, 0f, FULL_TURN_DEGREES), _glowTurnDuration, RotateMode.FastBeyond360)
+                .SetEase(Ease.Linear)
+                .SetLoops(-1);
+            _glowBreathTween = _glow.DOScale(_glowBreathScale, _glowBreathDuration)
+                .SetEase(Ease.InOutSine)
+                .SetLoops(-1, LoopType.Yoyo);
+
+            _flash.color = Color.clear;
+        }
+
+        private void OnDestroy()
+        {
+            _glowTurnTween?.Kill();
+            _glowBreathTween?.Kill();
+            _effectTween?.Kill();
+
+            if (_eventBus != null)
+            {
+                _eventBus.Unsubscribe<ZoneChangedEvent>(HandleZoneChanged);
+            }
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public void Construct(IEventBus eventBus)
+        {
+            _eventBus = eventBus;
+            _eventBus.Subscribe<ZoneChangedEvent>(HandleZoneChanged);
+        }
+
+        // Where the winning slice is on screen, so the flying reward icon can start from it.
+        public Vector3 GetSlicePosition(int sliceIndex)
+        {
+            return _sliceViews[sliceIndex].transform.position;
+        }
+
+        // A flash at the pointer and a punch on the winning slice. Returns the tween so the caller can wait for it.
+        public Tween PlayWinEffect(int sliceIndex)
+        {
+            _effectTween?.Kill(true);
+
+            _flash.rectTransform.localScale = Vector3.one * _flashStartScale;
+            _flash.color = Color.white;
+
+            Sequence effect = DOTween.Sequence();
+            effect.Append(_flash.rectTransform.DOScale(_flashEndScale, _effectDuration).SetEase(Ease.OutQuad));
+            effect.Join(_flash.DOFade(0f, _effectDuration));
+            effect.Join(_sliceViews[sliceIndex].transform.DOPunchScale(Vector3.one * _slicePunch, _effectDuration));
+            _effectTween = effect;
+            return effect;
+        }
+
+        public Tween PlayBombShake()
+        {
+            _effectTween?.Kill(true);
+            _effectTween = _sliceContainer.DOShakeAnchorPos(_bombShakeDuration, _bombShakeStrength, _bombShakeVibrato);
+            return _effectTween;
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void HandleZoneChanged(ZoneChangedEvent zoneChanged)
+        {
+            WheelSO wheel = zoneChanged.Wheel;
+            _baseImage.sprite = wheel.BaseSprite;
+            _indicatorImage.sprite = wheel.IndicatorSprite;
+
+            IReadOnlyList<SliceData> slices = wheel.Slices;
+            float anglePerSlice = FULL_TURN_DEGREES / slices.Count;
+
+            for (int i = 0; i < slices.Count; i++)
+            {
+                SliceView sliceView = GetOrCreateSliceView(i);
+                PlaceOnCircle(sliceView.transform, i * anglePerSlice);
+                sliceView.Setup(slices[i], wheel.BombIcon, zoneChanged.SliceAmounts[i]);
+            }
+
+            for (int i = slices.Count; i < _sliceViews.Count; i++)
+            {
+                _sliceViews[i].gameObject.SetActive(false);
+            }
+        }
+
+        private SliceView GetOrCreateSliceView(int index)
+        {
+            if (index == _sliceViews.Count)
+            {
+                _sliceViews.Add(Instantiate(_slicePrefab, _sliceContainer));
+            }
+
+            SliceView sliceView = _sliceViews[index];
+            sliceView.gameObject.SetActive(true);
+            return sliceView;
+        }
+
+        // On the circle at this angle (0 = top), turned so the slice faces outward.
+        private void PlaceOnCircle(Transform slice, float angle)
+        {
             float radians = angle * Mathf.Deg2Rad;
-
-            // Copy the template → place it on the circle → turn it to face outward → fill it with its reward.
-            SliceView sliceView = Instantiate(slicePrefab, sliceContainer);
-            sliceView.transform.localPosition = new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f) * sliceRadius;
-            sliceView.transform.localRotation = Quaternion.Euler(0f, 0f, -angle);
-
-            SliceData slice = wheel.Slices[i];
-            int amount = slice.IsBomb ? 0 : zoneRules.ScaleAmount(slice.Reward.Amount, zone);
-            sliceView.Setup(slice, wheel.BombIcon, amount);
-
-            sliceViews.Add(sliceView);
-        }
-    }
-
-    private void ClearSlices()
-    {
-        foreach (SliceView sliceView in sliceViews)
-        {
-            Destroy(sliceView.gameObject);
+            slice.localPosition = new Vector3(Mathf.Sin(radians), Mathf.Cos(radians), 0f) * _sliceRadius;
+            slice.localRotation = Quaternion.Euler(0f, 0f, -angle);
         }
 
-        sliceViews.Clear();
+        #endregion
     }
 }

@@ -5,7 +5,7 @@ using Vertigo.Data;
 namespace Vertigo.Gameplay
 {
     // The zone rules as plain logic: which type a zone is, when the next one of a type comes, how rewards grow.
-    public sealed class ZoneRules
+    public sealed class ZoneRules : IZoneRules
     {
         #region Constants
 
@@ -47,6 +47,15 @@ namespace Vertigo.Gameplay
             _specialZoneTypes = specialZoneTypes;
             _defaultZoneType = defaultZoneType;
             _rewardGrowthPerZone = rewardGrowthPerZone;
+        }
+
+        #endregion
+
+        #region Properties
+
+        public IReadOnlyList<ZoneTypeSO> SpecialZoneTypes
+        {
+            get { return _specialZoneTypes; }
         }
 
         #endregion

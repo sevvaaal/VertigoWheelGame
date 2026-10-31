@@ -4,12 +4,13 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Vertigo.Core;
 using Vertigo.Data;
 using Vertigo.Gameplay;
 
 namespace Vertigo.UI
 {
-    // The zone strip at the top: the current zone in the middle, colored by its type, sliding one step per zone.
+    // The zone strip at the top: draws the ZoneBarModel it is given and slides one step per zone.
     // The same number cells are reused for every zone instead of creating new ones.
     public class ZoneBarView : MonoBehaviour
     {
@@ -61,7 +62,18 @@ namespace Vertigo.UI
 
         #region Fields
 
+        private IEventBus _eventBus;
         private Tween _slideTween;
+
+        #endregion
+
+        #region Properties
+
+        // How many zones the bar shows at once; RunProgress builds exactly this many cells.
+        public int CellCount
+        {
+            get { return _zoneTexts.Count; }
+        }
 
         #endregion
 
@@ -70,26 +82,45 @@ namespace Vertigo.UI
         private void OnDestroy()
         {
             _slideTween?.Kill();
+
+            if (_eventBus != null)
+            {
+                _eventBus.Unsubscribe<ZoneChangedEvent>(HandleZoneChanged);
+            }
         }
 
         #endregion
 
         #region Public Methods
 
-        public void Show(int currentZone, ZoneRules zoneRules, bool animate)
+        public void Construct(IEventBus eventBus)
         {
-            int centerIndex = _zoneTexts.Count / 2;
+            _eventBus = eventBus;
+            _eventBus.Subscribe<ZoneChangedEvent>(HandleZoneChanged);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void HandleZoneChanged(ZoneChangedEvent zoneChanged)
+        {
+            ZoneBarModel model = zoneChanged.ZoneBar;
 
             for (int i = 0; i < _zoneTexts.Count; i++)
             {
-                int zone = currentZone + (i - centerIndex);
+                ZoneBarModel.Cell cell = model.Cells[i];
                 TMP_Text text = _zoneTexts[i];
 
-                // Cells before zone 1 stay empty.
-                text.text = zone >= 1 ? zone.ToString() : string.Empty;
+                if (cell.IsEmpty)
+                {
+                    text.text = string.Empty;
+                    continue;
+                }
 
-                Color color = zoneRules.GetZoneType(Mathf.Max(1, zone)).Color;
-                if (zone < currentZone)
+                text.text = cell.Zone.ToString();
+                Color color = cell.ZoneType.Color;
+                if (cell.IsPast)
                 {
                     color.a = _pastZoneAlpha;
                 }
@@ -99,10 +130,13 @@ namespace Vertigo.UI
 
             foreach (UpcomingZoneLabel label in _upcomingZoneLabels)
             {
-                label.Text.text = $"{label.ZoneType.DisplayName} {zoneRules.GetNextZone(currentZone, label.ZoneType)}";
+                if (model.NextZones.TryGetValue(label.ZoneType, out int nextZone))
+                {
+                    label.Text.text = $"{label.ZoneType.DisplayName} {nextZone}";
+                }
             }
 
-            if (animate)
+            if (zoneChanged.Animate)
             {
                 // The numbers have already moved one cell left, so start the strip one cell right and slide it back:
                 // on screen the whole strip appears to slide left by one zone.

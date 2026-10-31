@@ -3,7 +3,7 @@ using System;
 namespace Vertigo.Gameplay
 {
     // Decides which slice wins. Kept out of the wheel view so the rule can be tested without a scene.
-    public sealed class SpinResolver
+    public sealed class SpinResolver : ISpinResolver
     {
         #region Fields
 
