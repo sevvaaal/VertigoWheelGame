@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Vertigo.Data;
 
 // One slice on the wheel: the reward's icon and its amount for the current zone, or the bomb.
 public class SliceView : MonoBehaviour

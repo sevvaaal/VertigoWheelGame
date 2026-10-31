@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
+using Vertigo.Data;
+using Vertigo.Gameplay;
 
 // Shows a wheel: its bronze, silver or golden art, its slices with the amounts for the current zone, and its effects.
 public class WheelView : MonoBehaviour

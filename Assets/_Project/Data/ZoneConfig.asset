@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e98a6b70c98649f183e8e5797746270d, type: 3}
   m_Name: ZoneConfig
   m_EditorClassIdentifier: Assembly-CSharp::ZoneConfigSO
-  bronzeWheel: {fileID: 11400000, guid: d05b084230db14222aa92d444aa08ae7, type: 2}
-  silverWheel: {fileID: 11400000, guid: f1a50fc154b14445907334e49b1ae352, type: 2}
-  goldenWheel: {fileID: 11400000, guid: fd2e800919ce4c41ac05615085b43b76, type: 2}
-  safeZoneInterval: 5
-  superZoneInterval: 30
-  rewardGrowthPerZone: 0.1
+  _specialZoneTypes:
+  - {fileID: 11400000, guid: 68561e63ab914452bbb735be4c69ceb1, type: 2}
+  - {fileID: 11400000, guid: 9519c53554dc4452ab3a04bc129b4194, type: 2}
+  _defaultZoneType: {fileID: 11400000, guid: 5c1c65761099e48e8801683cdd1ad611, type: 2}
+  _rewardGrowthPerZone: 0.1

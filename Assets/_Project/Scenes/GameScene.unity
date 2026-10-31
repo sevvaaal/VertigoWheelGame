@@ -1113,6 +1113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b6a809ebed6145ce8d23f637a90f49d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vertigo.Runtime::Vertigo.Bootstrap.GameBootstrapper
+  _zoneConfig: {fileID: 11400000, guid: ec0438af8ebd44e59ad3f80b3f3fa728, type: 2}
   _gameController: {fileID: 60055373}
   _wheelSpinner: {fileID: 153925737}
   _spinButton: {fileID: 1332733066}
@@ -2110,6 +2111,26 @@ PrefabInstance:
       propertyPath: nextSuperZoneText
       value: 
       objectReference: {fileID: 596735455}
+    - target: {fileID: 6829764543064263002, guid: e73db46a860994a76b7cc4d636660f03, type: 3}
+      propertyPath: _upcomingZoneLabels.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6829764543064263002, guid: e73db46a860994a76b7cc4d636660f03, type: 3}
+      propertyPath: _upcomingZoneLabels.Array.data[0]._text
+      value: 
+      objectReference: {fileID: 596735455}
+    - target: {fileID: 6829764543064263002, guid: e73db46a860994a76b7cc4d636660f03, type: 3}
+      propertyPath: _upcomingZoneLabels.Array.data[1]._text
+      value: 
+      objectReference: {fileID: 157070798}
+    - target: {fileID: 6829764543064263002, guid: e73db46a860994a76b7cc4d636660f03, type: 3}
+      propertyPath: _upcomingZoneLabels.Array.data[0]._zoneType
+      value: 
+      objectReference: {fileID: 11400000, guid: 68561e63ab914452bbb735be4c69ceb1, type: 2}
+    - target: {fileID: 6829764543064263002, guid: e73db46a860994a76b7cc4d636660f03, type: 3}
+      propertyPath: _upcomingZoneLabels.Array.data[1]._zoneType
+      value: 
+      objectReference: {fileID: 11400000, guid: 9519c53554dc4452ab3a04bc129b4194, type: 2}
     - target: {fileID: 7073059505424059583, guid: e73db46a860994a76b7cc4d636660f03, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0

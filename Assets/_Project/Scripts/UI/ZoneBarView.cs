@@ -1,64 +1,117 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
+using Vertigo.Data;
+using Vertigo.Gameplay;
 
-// The zone strip at the top: the current zone in the middle, colored by type, sliding one step when the player advances.
-// The same number cells are reused for every zone instead of creating new ones.
-public class ZoneBarView : MonoBehaviour
+namespace Vertigo.UI
 {
-    [SerializeField] private RectTransform strip;
-    [SerializeField] private List<TMP_Text> zoneTexts = new List<TMP_Text>();
-    [SerializeField] private TMP_Text nextSuperZoneText;
-    [SerializeField] private TMP_Text nextSafeZoneText;
-    [SerializeField] private float cellWidth = 100f;
-    [SerializeField] private float slideDuration = 0.3f;
-    [SerializeField] private Color normalColor = Color.white;
-    [SerializeField] private Color safeColor = new Color32(0x3E, 0xE0, 0x7A, 0xFF);
-    [SerializeField] private Color superColor = new Color32(0xFF, 0xC8, 0x3D, 0xFF);
-    [SerializeField] private float pastZoneAlpha = 0.4f;
-
-    public void Show(int currentZone, ZoneRules zoneRules, bool animate)
+    // The zone strip at the top: the current zone in the middle, colored by its type, sliding one step per zone.
+    // The same number cells are reused for every zone instead of creating new ones.
+    public class ZoneBarView : MonoBehaviour
     {
-        int centerIndex = zoneTexts.Count / 2;
+        #region Types
 
-        for (int i = 0; i < zoneTexts.Count; i++)
+        // One "next ... zone" label, e.g. Super -> "SUPER ZONE 30". A new zone type only needs a new entry.
+        [Serializable]
+        private class UpcomingZoneLabel
         {
-            int zone = currentZone + (i - centerIndex);
-            TMP_Text text = zoneTexts[i];
+            [SerializeField] private ZoneTypeSO _zoneType;
+            [SerializeField] private TMP_Text _text;
 
-            // Cells before zone 1 stay empty.
-            text.text = zone >= 1 ? zone.ToString() : "";
-
-            Color color = GetColor(zoneRules.GetZoneType(Mathf.Max(1, zone)));
-            if (zone < currentZone)
+            public ZoneTypeSO ZoneType
             {
-                color.a = pastZoneAlpha;
+                get { return _zoneType; }
             }
 
-            text.color = color;
+            public TMP_Text Text
+            {
+                get { return _text; }
+            }
         }
 
-        nextSuperZoneText.text = $"SUPER ZONE {zoneRules.GetNextZone(currentZone, ZoneType.Super)}";
-        nextSafeZoneText.text = $"SAFE ZONE {zoneRules.GetNextZone(currentZone, ZoneType.Safe)}";
+        #endregion
 
-        if (animate)
+        #region Serialized Fields
+
+        [FormerlySerializedAs("strip")]
+        [SerializeField] private RectTransform _strip;
+
+        [FormerlySerializedAs("zoneTexts")]
+        [SerializeField] private List<TMP_Text> _zoneTexts = new List<TMP_Text>();
+
+        [SerializeField] private List<UpcomingZoneLabel> _upcomingZoneLabels = new List<UpcomingZoneLabel>();
+
+        [FormerlySerializedAs("cellWidth")]
+        [Min(0f)]
+        [SerializeField] private float _cellWidth = 100f;
+
+        [FormerlySerializedAs("slideDuration")]
+        [Min(0f)]
+        [SerializeField] private float _slideDuration = 0.3f;
+
+        [FormerlySerializedAs("pastZoneAlpha")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _pastZoneAlpha = 0.4f;
+
+        #endregion
+
+        #region Fields
+
+        private Tween _slideTween;
+
+        #endregion
+
+        #region Unity Methods
+
+        private void OnDestroy()
         {
-            // The numbers have already moved one cell to the left, so start the strip one cell to the right
-            // and slide it back: on screen it looks like the whole strip slides left by one zone.
-            strip.DOKill();
-            strip.anchoredPosition = new Vector2(cellWidth, 0f);
-            strip.DOAnchorPosX(0f, slideDuration).SetEase(Ease.OutCubic);
+            _slideTween?.Kill();
         }
-    }
 
-    private Color GetColor(ZoneType type)
-    {
-        switch (type)
+        #endregion
+
+        #region Public Methods
+
+        public void Show(int currentZone, ZoneRules zoneRules, bool animate)
         {
-            case ZoneType.Super: return superColor;
-            case ZoneType.Safe: return safeColor;
-            default: return normalColor;
+            int centerIndex = _zoneTexts.Count / 2;
+
+            for (int i = 0; i < _zoneTexts.Count; i++)
+            {
+                int zone = currentZone + (i - centerIndex);
+                TMP_Text text = _zoneTexts[i];
+
+                // Cells before zone 1 stay empty.
+                text.text = zone >= 1 ? zone.ToString() : string.Empty;
+
+                Color color = zoneRules.GetZoneType(Mathf.Max(1, zone)).Color;
+                if (zone < currentZone)
+                {
+                    color.a = _pastZoneAlpha;
+                }
+
+                text.color = color;
+            }
+
+            foreach (UpcomingZoneLabel label in _upcomingZoneLabels)
+            {
+                label.Text.text = $"{label.ZoneType.DisplayName} {zoneRules.GetNextZone(currentZone, label.ZoneType)}";
+            }
+
+            if (animate)
+            {
+                // The numbers have already moved one cell left, so start the strip one cell right and slide it back:
+                // on screen the whole strip appears to slide left by one zone.
+                _slideTween?.Kill();
+                _strip.anchoredPosition = new Vector2(_cellWidth, 0f);
+                _slideTween = _strip.DOAnchorPosX(0f, _slideDuration).SetEase(Ease.OutCubic);
+            }
         }
+
+        #endregion
     }
 }

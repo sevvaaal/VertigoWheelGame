@@ -1,56 +1,96 @@
 using System;
+using System.Collections.Generic;
+using Vertigo.Data;
 
-// The zone rules as pure logic: no Unity objects, so they can be unit tested.
-// The numbers come from the ZoneConfig asset, so designers can change them without touching code.
-public class ZoneRules
+namespace Vertigo.Gameplay
 {
-    private readonly int safeZoneInterval;
-    private readonly int superZoneInterval;
-    private readonly float rewardGrowthPerZone;
-
-    public ZoneRules(int safeZoneInterval, int superZoneInterval, float rewardGrowthPerZone)
+    // The zone rules as plain logic: which type a zone is, when the next one of a type comes, how rewards grow.
+    public sealed class ZoneRules
     {
-        this.safeZoneInterval = safeZoneInterval;
-        this.superZoneInterval = superZoneInterval;
-        this.rewardGrowthPerZone = rewardGrowthPerZone;
-    }
+        #region Constants
 
-    public ZoneType GetZoneType(int zone)
-    {
-        // Super is checked first: zone 30 is also divisible by 5, but it must be a super zone.
-        if (zone % superZoneInterval == 0)
+        // A zone type that can never appear (always claimed by a higher-priority type) must not hang the search.
+        private const int MAX_ZONE_SEARCH = 10000;
+
+        #endregion
+
+        #region Fields
+
+        private readonly IReadOnlyList<ZoneTypeSO> _specialZoneTypes;
+        private readonly ZoneTypeSO _defaultZoneType;
+        private readonly float _rewardGrowthPerZone;
+
+        #endregion
+
+        #region Constructor
+
+        public ZoneRules(IReadOnlyList<ZoneTypeSO> specialZoneTypes, ZoneTypeSO defaultZoneType, float rewardGrowthPerZone)
         {
-            return ZoneType.Super;
+            if (specialZoneTypes == null)
+            {
+                throw new ArgumentNullException(nameof(specialZoneTypes));
+            }
+
+            if (!defaultZoneType)
+            {
+                throw new ArgumentNullException(nameof(defaultZoneType));
+            }
+
+            foreach (ZoneTypeSO zoneType in specialZoneTypes)
+            {
+                if (!zoneType || zoneType.Interval < 1)
+                {
+                    throw new ArgumentException("Every special zone type needs an interval of at least 1.", nameof(specialZoneTypes));
+                }
+            }
+
+            _specialZoneTypes = specialZoneTypes;
+            _defaultZoneType = defaultZoneType;
+            _rewardGrowthPerZone = rewardGrowthPerZone;
         }
 
-        if (zone % safeZoneInterval == 0)
+        #endregion
+
+        #region Public Methods
+
+        public ZoneTypeSO GetZoneType(int zone)
         {
-            return ZoneType.Safe;
+            foreach (ZoneTypeSO zoneType in _specialZoneTypes)
+            {
+                if (zone % zoneType.Interval == 0)
+                {
+                    return zoneType;
+                }
+            }
+
+            return _defaultZoneType;
         }
 
-        return ZoneType.Normal;
-    }
-
-    // The first zone of this type at or after fromZone. Used for the "next safe / next super zone" labels.
-    public int GetNextZone(int fromZone, ZoneType type)
-    {
-        int zone = fromZone;
-        while (GetZoneType(zone) != type)
+        // The first zone of this type at or after fromZone. Used for the "next safe / next super zone" labels.
+        public int GetNextZone(int fromZone, ZoneTypeSO zoneType)
         {
-            zone++;
+            for (int zone = fromZone; zone < fromZone + MAX_ZONE_SEARCH; zone++)
+            {
+                if (GetZoneType(zone) == zoneType)
+                {
+                    return zone;
+                }
+            }
+
+            throw new InvalidOperationException($"{zoneType.name} never appears after zone {fromZone}.");
         }
 
-        return zone;
-    }
+        // Zone 1 pays the base amount; each later zone pays a little more.
+        public float GetRewardMultiplier(int zone)
+        {
+            return 1f + (zone - 1) * _rewardGrowthPerZone;
+        }
 
-    // Rewards get better every zone: zone 1 pays the base amount, each later zone a bit more.
-    public float GetRewardMultiplier(int zone)
-    {
-        return 1f + (zone - 1) * rewardGrowthPerZone;
-    }
+        public int ScaleAmount(int baseAmount, int zone)
+        {
+            return Math.Max(1, (int)Math.Round(baseAmount * GetRewardMultiplier(zone)));
+        }
 
-    public int ScaleAmount(int baseAmount, int zone)
-    {
-        return Math.Max(1, (int)Math.Round(baseAmount * GetRewardMultiplier(zone)));
+        #endregion
     }
 }

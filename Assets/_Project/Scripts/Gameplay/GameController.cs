@@ -3,6 +3,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Vertigo.Core;
+using Vertigo.Data;
 using Vertigo.UI;
 
 namespace Vertigo.Gameplay
@@ -88,7 +89,7 @@ namespace Vertigo.Gameplay
             _spinResolver = spinResolver;
 
             _inventory = new Inventory();
-            _zoneRules = new ZoneRules(_zoneConfig.SafeZoneInterval, _zoneConfig.SuperZoneInterval, _zoneConfig.RewardGrowthPerZone);
+            _zoneRules = new ZoneRules(_zoneConfig.SpecialZoneTypes, _zoneConfig.DefaultZoneType, _zoneConfig.RewardGrowthPerZone);
             _rewardList.Bind(_inventory);
 
             _eventBus.Subscribe<SpinRequestedEvent>(HandleSpinRequested);
@@ -187,8 +188,8 @@ namespace Vertigo.Gameplay
         // animate: slide the zone bar when advancing; jump straight there at the start and on restart.
         private void ShowZone(bool animate)
         {
-            ZoneType type = _zoneRules.GetZoneType(_currentZone);
-            _currentWheel = _zoneConfig.GetWheel(type);
+            ZoneTypeSO zoneType = _zoneRules.GetZoneType(_currentZone);
+            _currentWheel = zoneType.GetWheel(_currentZone);
 
             _wheelView.Show(_currentWheel, _zoneRules, _currentZone);
             _zoneBar.Show(_currentZone, _zoneRules, animate);
