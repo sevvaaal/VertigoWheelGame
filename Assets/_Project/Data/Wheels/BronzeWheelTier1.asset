@@ -10,24 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa2c57fd530b7487c889100a7ab59edb, type: 3}
-  m_Name: BronzeWheel
+  m_Name: BronzeWheelTier1
   m_EditorClassIdentifier: Assembly-CSharp::WheelSO
   _baseSprite: {fileID: -7416167051008218582, guid: 9bd2668b137f048a1ae2dcb0318a1f83, type: 3}
   _indicatorSprite: {fileID: 5759410588988491854, guid: 9b450759e06074e5cb9f07f1f96d205f, type: 3}
   _bombIcon: {fileID: -6860072587592751284, guid: 290bd238ed7c7483f9b36bbc2860bc28, type: 3}
   _rewards:
   - type: {fileID: 11400000, guid: 5e0d8f3ca02ed4422990c238e95cf19e, type: 2}
-    amount: 300
+    amount: 100
+  - type: {fileID: 11400000, guid: cf7c849c967ac48e08a0080a802417d8, type: 2}
+    amount: 5
+  - type: {fileID: 11400000, guid: 20d102d09baaa4cc59be36ea2dc08e31, type: 2}
+    amount: 1
+  - type: {fileID: 11400000, guid: b101f52f2a6564d28ab59e291c616eea, type: 2}
+    amount: 1
+  - type: {fileID: 11400000, guid: 424d521c477ed4526b728429d1c57917, type: 2}
+    amount: 1
+  - type: {fileID: 11400000, guid: 5e0d8f3ca02ed4422990c238e95cf19e, type: 2}
+    amount: 200
   - type: {fileID: 11400000, guid: cf7c849c967ac48e08a0080a802417d8, type: 2}
     amount: 10
-  - type: {fileID: 11400000, guid: 20d102d09baaa4cc59be36ea2dc08e31, type: 2}
-    amount: 1
-  - type: {fileID: 11400000, guid: 20d102d09baaa4cc59be36ea2dc08e31, type: 2}
-    amount: 1
-  - type: {fileID: 11400000, guid: 31c6bb55ea0ec4ea6885385a073c09aa, type: 2}
-    amount: 1
-  - type: {fileID: 11400000, guid: 841e32c8f3154497b96f6ab559be3ff0, type: 2}
-    amount: 1
-  - type: {fileID: 11400000, guid: cf7c849c967ac48e08a0080a802417d8, type: 2}
-    amount: 20
   _bombSlots: 00000000

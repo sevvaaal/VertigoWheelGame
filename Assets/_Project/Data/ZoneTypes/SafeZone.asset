@@ -19,3 +19,5 @@ MonoBehaviour:
   _wheelTiers:
   - _fromZone: 1
     _wheel: {fileID: 11400000, guid: f1a50fc154b14445907334e49b1ae352, type: 2}
+  - _fromZone: 15
+    _wheel: {fileID: 11400000, guid: 23337bc26e36d448589318025b55a69c, type: 2}

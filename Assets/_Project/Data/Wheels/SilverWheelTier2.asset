@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa2c57fd530b7487c889100a7ab59edb, type: 3}
-  m_Name: SilverWheel
+  m_Name: SilverWheelTier2
   m_EditorClassIdentifier: Assembly-CSharp::WheelSO
   _baseSprite: {fileID: -4250264824657568362, guid: b420384ada57b4a84ac300ca3ac04638, type: 3}
   _indicatorSprite: {fileID: 2528496851094761378, guid: 37d1a1fecbda44984830e6465ef69218, type: 3}
   _bombIcon: {fileID: -6860072587592751284, guid: 290bd238ed7c7483f9b36bbc2860bc28, type: 3}
   _rewards:
-  - type: {fileID: 11400000, guid: cf7c849c967ac48e08a0080a802417d8, type: 2}
-    amount: 50
   - type: {fileID: 11400000, guid: 5e0d8f3ca02ed4422990c238e95cf19e, type: 2}
-    amount: 1000
-  - type: {fileID: 11400000, guid: 31c6bb55ea0ec4ea6885385a073c09aa, type: 2}
+    amount: 2500
+  - type: {fileID: 11400000, guid: cf7c849c967ac48e08a0080a802417d8, type: 2}
+    amount: 150
+  - type: {fileID: 11400000, guid: 0fb6e869712d4aaea5f29b2c714d912c, type: 2}
     amount: 1
-  - type: {fileID: 11400000, guid: 20d102d09baaa4cc59be36ea2dc08e31, type: 2}
-    amount: 2
-  - type: {fileID: 11400000, guid: 424d521c477ed4526b728429d1c57917, type: 2}
+  - type: {fileID: 11400000, guid: ca64505c5a0641c1a5468255541ed24f, type: 2}
+    amount: 1
+  - type: {fileID: 11400000, guid: ecbaa0537f96461884b3dbcd9fb95272, type: 2}
     amount: 1
   - type: {fileID: 11400000, guid: 841e32c8f3154497b96f6ab559be3ff0, type: 2}
-    amount: 1
+    amount: 2
   - type: {fileID: 11400000, guid: cf7c849c967ac48e08a0080a802417d8, type: 2}
-    amount: 100
-  - type: {fileID: 11400000, guid: b101f52f2a6564d28ab59e291c616eea, type: 2}
+    amount: 250
+  - type: {fileID: 11400000, guid: 31c6bb55ea0ec4ea6885385a073c09aa, type: 2}
     amount: 2
   _bombSlots: 
