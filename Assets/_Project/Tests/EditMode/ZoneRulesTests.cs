@@ -29,13 +29,6 @@ public class ZoneRulesTests
         Assert.AreEqual(ZoneType.Super, rules.GetZoneType(30));
     }
 
-    [TestCase(false, true)]
-    [TestCase(true, false)]
-    public void CanLeave_OnlyWhileWheelIsStill(bool isSpinning, bool expected)
-    {
-        Assert.AreEqual(expected, rules.CanLeave(isSpinning));
-    }
-
     [Test]
     public void ScaleAmount_FirstZonePaysBaseAmount()
     {

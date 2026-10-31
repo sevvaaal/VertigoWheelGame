@@ -131,7 +131,7 @@ public class GameController : MonoBehaviour
 
     private bool CanLeave()
     {
-        return !isShowingResult && zoneRules.CanLeave(wheelSpinner.IsSpinning);
+        return !isShowingResult && !wheelSpinner.IsSpinning;
     }
 
     // Walk away with everything collected so far.
