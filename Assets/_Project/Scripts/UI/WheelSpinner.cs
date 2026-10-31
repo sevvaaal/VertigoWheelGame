@@ -2,6 +2,8 @@ using System;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Vertigo.Core;
+using Vertigo.Gameplay;
 
 namespace Vertigo.UI
 {
@@ -34,21 +36,8 @@ namespace Vertigo.UI
 
         #region Fields
 
+        private IEventBus _eventBus;
         private Tween _spinTween;
-
-        #endregion
-
-        #region Events
-
-        public event Action SpinStarted;
-
-        public event Action SpinCompleted;
-
-        #endregion
-
-        #region Properties
-
-        public bool IsSpinning { get; private set; }
 
         #endregion
 
@@ -63,15 +52,17 @@ namespace Vertigo.UI
 
         #region Public Methods
 
+        public void Construct(IEventBus eventBus)
+        {
+            _eventBus = eventBus;
+        }
+
         public void SpinTo(int sliceIndex, int sliceCount)
         {
             if (sliceCount <= 0 || sliceIndex < 0 || sliceIndex >= sliceCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(sliceIndex), sliceIndex, $"No slice {sliceIndex} on a wheel with {sliceCount} slices.");
             }
-
-            IsSpinning = true;
-            SpinStarted?.Invoke();
 
             // Extra full turns backwards make it look like a real spin; the end angle puts the slice under the pointer.
             float anglePerSlice = FULL_TURN_DEGREES / sliceCount;
@@ -89,8 +80,7 @@ namespace Vertigo.UI
         private void HandleSpinFinished()
         {
             _spinTween = null;
-            IsSpinning = false;
-            SpinCompleted?.Invoke();
+            _eventBus.Publish(new SpinFinishedEvent());
         }
 
         #endregion

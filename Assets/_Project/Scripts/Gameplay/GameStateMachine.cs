@@ -88,6 +88,11 @@ namespace Vertigo.Gameplay
             return TryFire(Trigger.Leave);
         }
 
+        public bool TryRestart()
+        {
+            return TryFire(Trigger.Restart);
+        }
+
         // Called by our own flow code, so the wrong state here means a bug and throws.
         public void ShowResult()
         {
@@ -102,11 +107,6 @@ namespace Vertigo.Gameplay
         public void Bust()
         {
             Fire(Trigger.Bust);
-        }
-
-        public void Restart()
-        {
-            Fire(Trigger.Restart);
         }
 
         // Re-sends the current state, so views can set themselves up at the start of the game.

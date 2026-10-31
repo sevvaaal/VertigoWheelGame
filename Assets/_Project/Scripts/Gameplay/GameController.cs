@@ -1,160 +1,208 @@
 using System.Collections;
 using DG.Tweening;
 using UnityEngine;
-using Vertigo.Gameplay;
+using UnityEngine.Serialization;
+using Vertigo.Core;
 using Vertigo.UI;
 
-// The game's referee: tracks the zone, decides what a spin result means, keeps the inventory and decides when leaving is allowed.
-public class GameController : MonoBehaviour
+namespace Vertigo.Gameplay
 {
-    private const int FirstZone = 1;
-
-    [SerializeField] private WheelSpinner wheelSpinner;
-    [SerializeField] private WheelView wheelView;
-    [SerializeField] private RewardListView rewardList;
-    [SerializeField] private BombPopup bombPopup;
-    [SerializeField] private CollectPopup collectPopup;
-    [SerializeField] private ButtonView spinButton;
-    [SerializeField] private ButtonView leaveButton;
-    [SerializeField] private ZoneBarView zoneBar;
-    [SerializeField] private RewardFlyEffect rewardFly;
-    [SerializeField] private ZoneConfigSO zoneConfig;
-
-    [Tooltip("For testing: the zone a run starts at. Set to 29 to reach the super zone in one spin.")]
-    [SerializeField] private int startZone = FirstZone;
-
-    private Inventory inventory;
-    private ZoneRules zoneRules;
-    private SpinResolver spinResolver;
-    private WheelSO currentWheel;
-    private int currentZone;
-    private int winningSliceIndex;
-
-    // True while a spin's result is still playing (flash, flying icon, shake). Spin and Leave wait for it.
-    private bool isShowingResult;
-
-    private void Awake()
+    // Runs the game flow: reacts to requests, asks the state machine what is allowed, and plays the result sequences.
+    public class GameController : MonoBehaviour
     {
-        inventory = new Inventory();
-        zoneRules = new ZoneRules(zoneConfig.SafeZoneInterval, zoneConfig.SuperZoneInterval, zoneConfig.RewardGrowthPerZone);
-        spinResolver = new SpinResolver(new UnityRandomSource());
-        rewardList.Bind(inventory);
+        #region Constants
 
-        spinButton.Clicked += Spin;
-        wheelSpinner.SpinStarted += UpdateLeaveButton;
-        wheelSpinner.SpinCompleted += HandleSpinCompleted;
-        bombPopup.RestartClicked += Restart;
-        collectPopup.PlayAgainClicked += Restart;
-        leaveButton.Clicked += Leave;
-    }
+        private const int FIRST_ZONE = 1;
 
-    // Showing the first zone talks to other objects (wheel, zone bar, buttons), so it waits for Start:
-    // by then every object has finished its own Awake.
-    private void Start()
-    {
-        currentZone = startZone;
-        ShowZone(false);
-    }
+        #endregion
 
-    // SPIN is only allowed when the wheel is still and the last result has finished playing.
-    private void Spin()
-    {
-        if (wheelSpinner.IsSpinning || isShowingResult)
+        #region Serialized Fields
+
+        [FormerlySerializedAs("wheelSpinner")]
+        [SerializeField] private WheelSpinner _wheelSpinner;
+
+        [FormerlySerializedAs("wheelView")]
+        [SerializeField] private WheelView _wheelView;
+
+        [FormerlySerializedAs("rewardList")]
+        [SerializeField] private RewardListView _rewardList;
+
+        [FormerlySerializedAs("zoneBar")]
+        [SerializeField] private ZoneBarView _zoneBar;
+
+        [FormerlySerializedAs("rewardFly")]
+        [SerializeField] private RewardFlyEffect _rewardFly;
+
+        [FormerlySerializedAs("zoneConfig")]
+        [SerializeField] private ZoneConfigSO _zoneConfig;
+
+        #endregion
+
+        #region Fields
+
+        private IEventBus _eventBus;
+        private GameStateMachine _stateMachine;
+        private SpinResolver _spinResolver;
+        private Inventory _inventory;
+        private ZoneRules _zoneRules;
+        private WheelSO _currentWheel;
+        private int _currentZone;
+        private int _winningSliceIndex;
+        private Coroutine _resultCoroutine;
+
+        #endregion
+
+        #region Unity Methods
+
+        // Showing the first zone talks to other objects, so it waits for Start, when every Awake has run.
+        private void Start()
         {
-            return;
+            _currentZone = FIRST_ZONE;
+            ShowZone(false);
+            _stateMachine.PublishCurrent();
         }
 
-        spinButton.SetAvailable(false);
-
-        // Decide first, then let the wheel rotate to the slice that was chosen.
-        int sliceCount = currentWheel.Slices.Count;
-        winningSliceIndex = spinResolver.PickSliceIndex(sliceCount);
-        wheelSpinner.SpinTo(winningSliceIndex, sliceCount);
-    }
-
-    private void HandleSpinCompleted()
-    {
-        SliceData slice = currentWheel.Slices[winningSliceIndex];
-        isShowingResult = true;
-        StartCoroutine(slice.IsBomb ? PlayBombSequence() : PlayRewardSequence(slice));
-    }
-
-    // Shake the wheel, then lose everything.
-    private IEnumerator PlayBombSequence()
-    {
-        yield return wheelView.PlayBombShake().WaitForCompletion();
-
-        inventory.Clear();
-        bombPopup.Show();
-        isShowingResult = false;
-    }
-
-    // Flash and punch the winning slice, fly its icon into the panel, and only then add the reward and advance.
-    private IEnumerator PlayRewardSequence(SliceData slice)
-    {
-        Vector3 iconStart = wheelView.GetSlicePosition(winningSliceIndex);
-
-        yield return wheelView.PlayWinEffect(winningSliceIndex).WaitForCompletion();
-
-        Transform flyTarget = rewardList.GetFlyTarget(slice.Reward.Type);
-        yield return rewardFly.Fly(slice.Reward.Type.Icon, iconStart, flyTarget).WaitForCompletion();
-
-        // The slice stores the base amount; the reward actually won grows with the zone.
-        int amount = zoneRules.ScaleAmount(slice.Reward.Amount, currentZone);
-        inventory.Add(new Reward(slice.Reward.Type, amount));
-
-        currentZone++;
-        ShowZone(true);
-
-        isShowingResult = false;
-        spinButton.SetAvailable(true);
-        UpdateLeaveButton();
-    }
-
-    // Puts the right wheel on screen for the current zone: bronze with a bomb, silver every 5th, golden every 30th.
-    // animate: slide the zone bar when advancing; jump straight there at the start and on restart.
-    private void ShowZone(bool animate)
-    {
-        ZoneType type = zoneRules.GetZoneType(currentZone);
-        currentWheel = zoneConfig.GetWheel(type);
-
-        wheelView.Show(currentWheel, zoneRules, currentZone);
-        zoneBar.Show(currentZone, zoneRules, animate);
-        UpdateLeaveButton();
-    }
-
-    // Leave is possible before any spin, never while the wheel is spinning or a result is still playing.
-    private void UpdateLeaveButton()
-    {
-        leaveButton.SetAvailable(CanLeave());
-    }
-
-    private bool CanLeave()
-    {
-        return !isShowingResult && !wheelSpinner.IsSpinning;
-    }
-
-    // Walk away with everything collected so far.
-    private void Leave()
-    {
-        if (!CanLeave())
+        private void OnDestroy()
         {
-            return;
+            StopResultCoroutine();
+
+            if (_eventBus == null)
+            {
+                return;
+            }
+
+            _eventBus.Unsubscribe<SpinRequestedEvent>(HandleSpinRequested);
+            _eventBus.Unsubscribe<SpinFinishedEvent>(HandleSpinFinished);
+            _eventBus.Unsubscribe<LeaveRequestedEvent>(HandleLeaveRequested);
+            _eventBus.Unsubscribe<RestartRequestedEvent>(HandleRestartRequested);
         }
 
-        collectPopup.Show(inventory.Amounts);
-    }
+        #endregion
 
-    // Start a new run from scratch: no rewards, back to the first zone.
-    private void Restart()
-    {
-        bombPopup.Hide();
-        collectPopup.Hide();
-        inventory.Clear();
-        currentZone = FirstZone;
-        ShowZone(false);
+        #region Public Methods
 
-        isShowingResult = false;
-        spinButton.SetAvailable(true);
+        public void Construct(IEventBus eventBus, GameStateMachine stateMachine, SpinResolver spinResolver)
+        {
+            _eventBus = eventBus;
+            _stateMachine = stateMachine;
+            _spinResolver = spinResolver;
+
+            _inventory = new Inventory();
+            _zoneRules = new ZoneRules(_zoneConfig.SafeZoneInterval, _zoneConfig.SuperZoneInterval, _zoneConfig.RewardGrowthPerZone);
+            _rewardList.Bind(_inventory);
+
+            _eventBus.Subscribe<SpinRequestedEvent>(HandleSpinRequested);
+            _eventBus.Subscribe<SpinFinishedEvent>(HandleSpinFinished);
+            _eventBus.Subscribe<LeaveRequestedEvent>(HandleLeaveRequested);
+            _eventBus.Subscribe<RestartRequestedEvent>(HandleRestartRequested);
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandleSpinRequested(SpinRequestedEvent spinRequested)
+        {
+            if (!_stateMachine.TryStartSpin())
+            {
+                return;
+            }
+
+            // Decide first, then let the wheel rotate to the slice that was chosen.
+            int sliceCount = _currentWheel.Slices.Count;
+            _winningSliceIndex = _spinResolver.PickSliceIndex(sliceCount);
+            _wheelSpinner.SpinTo(_winningSliceIndex, sliceCount);
+        }
+
+        private void HandleSpinFinished(SpinFinishedEvent spinFinished)
+        {
+            _stateMachine.ShowResult();
+
+            SliceData slice = _currentWheel.Slices[_winningSliceIndex];
+            _resultCoroutine = StartCoroutine(slice.IsBomb ? PlayBombSequenceCoroutine() : PlayRewardSequenceCoroutine(slice));
+        }
+
+        private void HandleLeaveRequested(LeaveRequestedEvent leaveRequested)
+        {
+            if (!_stateMachine.CanLeave)
+            {
+                return;
+            }
+
+            // The rewards go out first, so the collect popup has its rows ready when the state shows it.
+            _eventBus.Publish(new RewardsCollectedEvent(_inventory.Amounts));
+            _stateMachine.TryLeave();
+        }
+
+        private void HandleRestartRequested(RestartRequestedEvent restartRequested)
+        {
+            if (!_stateMachine.TryRestart())
+            {
+                return;
+            }
+
+            StopResultCoroutine();
+            _inventory.Clear();
+            _currentZone = FIRST_ZONE;
+            ShowZone(false);
+        }
+
+        #endregion
+
+        #region Coroutines
+
+        private IEnumerator PlayBombSequenceCoroutine()
+        {
+            yield return _wheelView.PlayBombShake().WaitForCompletion();
+
+            _inventory.Clear();
+            _resultCoroutine = null;
+            _stateMachine.Bust();
+        }
+
+        // The reward is only added once its icon has landed in the panel.
+        private IEnumerator PlayRewardSequenceCoroutine(SliceData slice)
+        {
+            Vector3 iconStart = _wheelView.GetSlicePosition(_winningSliceIndex);
+
+            yield return _wheelView.PlayWinEffect(_winningSliceIndex).WaitForCompletion();
+
+            Transform flyTarget = _rewardList.GetFlyTarget(slice.Reward.Type);
+            yield return _rewardFly.Fly(slice.Reward.Type.Icon, iconStart, flyTarget).WaitForCompletion();
+
+            int amount = _zoneRules.ScaleAmount(slice.Reward.Amount, _currentZone);
+            _inventory.Add(new Reward(slice.Reward.Type, amount));
+
+            _currentZone++;
+            ShowZone(true);
+
+            _resultCoroutine = null;
+            _stateMachine.FinishResult();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        // animate: slide the zone bar when advancing; jump straight there at the start and on restart.
+        private void ShowZone(bool animate)
+        {
+            ZoneType type = _zoneRules.GetZoneType(_currentZone);
+            _currentWheel = _zoneConfig.GetWheel(type);
+
+            _wheelView.Show(_currentWheel, _zoneRules, _currentZone);
+            _zoneBar.Show(_currentZone, _zoneRules, animate);
+        }
+
+        private void StopResultCoroutine()
+        {
+            if (_resultCoroutine != null)
+            {
+                StopCoroutine(_resultCoroutine);
+                _resultCoroutine = null;
+            }
+        }
+
+        #endregion
     }
 }

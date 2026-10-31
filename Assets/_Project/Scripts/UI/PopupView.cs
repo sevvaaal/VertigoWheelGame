@@ -1,29 +1,114 @@
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
+using Vertigo.Core;
+using Vertigo.Gameplay;
 
-// Shared behavior of every popup: hidden at start, pops in with DOTween, hides again.
-// Each popup inherits this and only adds its own content and buttons.
-public abstract class PopupView : MonoBehaviour
+namespace Vertigo.UI
 {
-    [SerializeField] private RectTransform panel;
-    [SerializeField] private float popDuration = 0.3f;
-
-    protected virtual void Awake()
+    // Shared behaviour of every popup: it shows and hides itself from the game state and pops in with DOTween.
+    public abstract class PopupView : MonoBehaviour
     {
-        gameObject.SetActive(false);
-    }
+        #region Serialized Fields
 
-    public void Show()
-    {
-        gameObject.SetActive(true);
+        [FormerlySerializedAs("panel")]
+        [SerializeField] private RectTransform _panel;
 
-        // Grow from nothing to full size with a little overshoot.
-        panel.localScale = Vector3.zero;
-        panel.DOScale(1f, popDuration).SetEase(Ease.OutBack);
-    }
+        [FormerlySerializedAs("popDuration")]
+        [Min(0f)]
+        [SerializeField] private float _popDuration = 0.3f;
 
-    public void Hide()
-    {
-        gameObject.SetActive(false);
+        #endregion
+
+        #region Fields
+
+        private Tween _popTween;
+
+        #endregion
+
+        #region Properties
+
+        protected IEventBus EventBus { get; private set; }
+
+        #endregion
+
+        #region Unity Methods
+
+        protected virtual void Awake()
+        {
+            gameObject.SetActive(false);
+        }
+
+        // Subscriptions are tied to Construct and OnDestroy, not OnEnable/OnDisable:
+        // a hidden popup is inactive, but it still has to hear the event that shows it.
+        protected virtual void OnDestroy()
+        {
+            _popTween?.Kill();
+
+            if (EventBus != null)
+            {
+                Unsubscribe();
+            }
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public void Construct(IEventBus eventBus)
+        {
+            EventBus = eventBus;
+            Subscribe();
+        }
+
+        #endregion
+
+        #region Protected Methods
+
+        protected abstract bool ShouldShow(GameState state);
+
+        protected virtual void Subscribe()
+        {
+            EventBus.Subscribe<GameStateChangedEvent>(HandleStateChanged);
+        }
+
+        protected virtual void Unsubscribe()
+        {
+            EventBus.Unsubscribe<GameStateChangedEvent>(HandleStateChanged);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void HandleStateChanged(GameStateChangedEvent stateChanged)
+        {
+            bool shouldShow = ShouldShow(stateChanged.Current);
+            if (shouldShow && !gameObject.activeSelf)
+            {
+                Show();
+            }
+            else if (!shouldShow && gameObject.activeSelf)
+            {
+                Hide();
+            }
+        }
+
+        private void Show()
+        {
+            gameObject.SetActive(true);
+
+            _popTween?.Kill();
+            _panel.localScale = Vector3.zero;
+            _popTween = _panel.DOScale(1f, _popDuration).SetEase(Ease.OutBack);
+        }
+
+        private void Hide()
+        {
+            _popTween?.Kill();
+            gameObject.SetActive(false);
+        }
+
+        #endregion
     }
 }

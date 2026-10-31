@@ -88,7 +88,7 @@ namespace Vertigo.Tests.EditMode
             Assert.IsFalse(_stateMachine.TryStartSpin());
             Assert.IsFalse(_stateMachine.TryLeave());
 
-            _stateMachine.Restart();
+            Assert.IsTrue(_stateMachine.TryRestart());
 
             Assert.AreEqual(GameState.Idle, _stateMachine.Current);
             Assert.IsTrue(_stateMachine.CanSpin);
@@ -103,8 +103,15 @@ namespace Vertigo.Tests.EditMode
             Assert.IsFalse(_stateMachine.CanSpin);
             Assert.IsFalse(_stateMachine.TryStartSpin());
 
-            _stateMachine.Restart();
+            Assert.IsTrue(_stateMachine.TryRestart());
 
+            Assert.AreEqual(GameState.Idle, _stateMachine.Current);
+        }
+
+        [Test]
+        public void TryRestart_WhileIdle_ReturnsFalse()
+        {
+            Assert.IsFalse(_stateMachine.TryRestart());
             Assert.AreEqual(GameState.Idle, _stateMachine.Current);
         }
 

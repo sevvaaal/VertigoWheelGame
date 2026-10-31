@@ -1,32 +1,66 @@
-using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Vertigo.Gameplay;
 
-// Shown when the wheel lands on the bomb. It only announces the restart; the GameController decides what restarting means.
-public class BombPopup : PopupView
+namespace Vertigo.UI
 {
-    private const string RestartButtonName = "ui_button_restart";
-
-    [SerializeField] private Button restartButton;
-
-    public event Action RestartClicked;
-
-    // Runs in the editor whenever this component changes: the button reference is found by name, never dragged by hand.
-    private void OnValidate()
+    public class BombPopup : PopupView
     {
-        restartButton = UIChildFinder.Find<Button>(transform, RestartButtonName);
-    }
+        #region Constants
 
-    protected override void Awake()
-    {
-        restartButton.onClick.AddListener(HandleRestartClicked);
+        private const string RESTART_BUTTON_NAME = "ui_button_restart";
 
-        // The parent's Awake hides the popup until it is needed.
-        base.Awake();
-    }
+        #endregion
 
-    private void HandleRestartClicked()
-    {
-        RestartClicked?.Invoke();
+        #region Serialized Fields
+
+        [FormerlySerializedAs("restartButton")]
+        [SerializeField] private Button _restartButton;
+
+        #endregion
+
+        #region Unity Methods
+
+        private void OnValidate()
+        {
+            _restartButton = UIChildFinder.Find<Button>(transform, RESTART_BUTTON_NAME);
+        }
+
+        protected override void Awake()
+        {
+            _restartButton.onClick.AddListener(HandleRestartClicked);
+            base.Awake();
+        }
+
+        protected override void OnDestroy()
+        {
+            if (_restartButton)
+            {
+                _restartButton.onClick.RemoveListener(HandleRestartClicked);
+            }
+
+            base.OnDestroy();
+        }
+
+        #endregion
+
+        #region Overrides
+
+        protected override bool ShouldShow(GameState state)
+        {
+            return state == GameState.Busted;
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void HandleRestartClicked()
+        {
+            EventBus.Publish(new RestartRequestedEvent());
+        }
+
+        #endregion
     }
 }
