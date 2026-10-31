@@ -1,54 +1,98 @@
 using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-// Spins the wheel and announces which slice it landed on. It has no button and decides nothing about the result:
-// the GameController asks it to spin and decides what the landed slice means.
-public class WheelSpinner : MonoBehaviour
+namespace Vertigo.UI
 {
-    [SerializeField] private RectTransform wheel;
-    [SerializeField] private float spinDuration = 3f;
-    [SerializeField] private int fullTurns = 5;
-    [SerializeField] private Ease spinEase = Ease.OutCubic;
-
-    private WheelSO wheelData;
-    private SliceData winningSlice;
-
-    public event Action SpinStarted;
-    public event Action<SliceData> SpinCompleted;
-
-    public bool IsSpinning { get; private set; }
-
-    // Which slice the last spin landed on, so the view can highlight it.
-    public int WinningIndex { get; private set; }
-
-    // The wheel changes with the zone (bronze, silver, golden), so the winner is always picked from the current one.
-    public void SetWheel(WheelSO wheel)
+    // Only rotates the wheel to the slice it is given. Which slice wins is decided by SpinResolver.
+    public class WheelSpinner : MonoBehaviour
     {
-        wheelData = wheel;
-    }
+        #region Constants
 
-    public void Spin()
-    {
-        IsSpinning = true;
-        SpinStarted?.Invoke();
+        private const float FULL_TURN_DEGREES = 360f;
 
-        // Decide first, then animate the wheel so the winning slice ends under the pointer.
-        int sliceCount = wheelData.Slices.Count;
-        WinningIndex = UnityEngine.Random.Range(0, sliceCount);
-        winningSlice = wheelData.Slices[WinningIndex];
+        #endregion
 
-        float anglePerSlice = 360f / sliceCount;
-        float targetAngle = WinningIndex * anglePerSlice - fullTurns * 360f;
+        #region Serialized Fields
 
-        wheel.DORotate(new Vector3(0f, 0f, targetAngle), spinDuration, RotateMode.FastBeyond360)
-            .SetEase(spinEase)
-            .OnComplete(OnSpinFinished);
-    }
+        [FormerlySerializedAs("wheel")]
+        [SerializeField] private RectTransform _wheel;
 
-    private void OnSpinFinished()
-    {
-        IsSpinning = false;
-        SpinCompleted?.Invoke(winningSlice);
+        [FormerlySerializedAs("spinDuration")]
+        [Min(0.1f)]
+        [SerializeField] private float _spinDuration = 3f;
+
+        [FormerlySerializedAs("fullTurns")]
+        [Min(1)]
+        [SerializeField] private int _fullTurns = 5;
+
+        [FormerlySerializedAs("spinEase")]
+        [SerializeField] private Ease _spinEase = Ease.OutCubic;
+
+        #endregion
+
+        #region Fields
+
+        private Tween _spinTween;
+
+        #endregion
+
+        #region Events
+
+        public event Action SpinStarted;
+
+        public event Action SpinCompleted;
+
+        #endregion
+
+        #region Properties
+
+        public bool IsSpinning { get; private set; }
+
+        #endregion
+
+        #region Unity Methods
+
+        private void OnDestroy()
+        {
+            _spinTween?.Kill();
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public void SpinTo(int sliceIndex, int sliceCount)
+        {
+            if (sliceCount <= 0 || sliceIndex < 0 || sliceIndex >= sliceCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sliceIndex), sliceIndex, $"No slice {sliceIndex} on a wheel with {sliceCount} slices.");
+            }
+
+            IsSpinning = true;
+            SpinStarted?.Invoke();
+
+            // Extra full turns backwards make it look like a real spin; the end angle puts the slice under the pointer.
+            float anglePerSlice = FULL_TURN_DEGREES / sliceCount;
+            float targetAngle = sliceIndex * anglePerSlice - _fullTurns * FULL_TURN_DEGREES;
+
+            _spinTween = _wheel.DORotate(new Vector3(0f, 0f, targetAngle), _spinDuration, RotateMode.FastBeyond360)
+                .SetEase(_spinEase)
+                .OnComplete(HandleSpinFinished);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void HandleSpinFinished()
+        {
+            _spinTween = null;
+            IsSpinning = false;
+            SpinCompleted?.Invoke();
+        }
+
+        #endregion
     }
 }

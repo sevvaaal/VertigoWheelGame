@@ -1,6 +1,8 @@
 using System.Collections;
 using DG.Tweening;
 using UnityEngine;
+using Vertigo.Gameplay;
+using Vertigo.UI;
 
 // The game's referee: tracks the zone, decides what a spin result means, keeps the inventory and decides when leaving is allowed.
 public class GameController : MonoBehaviour
@@ -23,7 +25,10 @@ public class GameController : MonoBehaviour
 
     private Inventory inventory;
     private ZoneRules zoneRules;
+    private SpinResolver spinResolver;
+    private WheelSO currentWheel;
     private int currentZone;
+    private int winningSliceIndex;
 
     // True while a spin's result is still playing (flash, flying icon, shake). Spin and Leave wait for it.
     private bool isShowingResult;
@@ -32,6 +37,7 @@ public class GameController : MonoBehaviour
     {
         inventory = new Inventory();
         zoneRules = new ZoneRules(zoneConfig.SafeZoneInterval, zoneConfig.SuperZoneInterval, zoneConfig.RewardGrowthPerZone);
+        spinResolver = new SpinResolver(new UnityRandomSource());
         rewardList.Bind(inventory);
 
         spinButton.Clicked += Spin;
@@ -59,11 +65,16 @@ public class GameController : MonoBehaviour
         }
 
         spinButton.SetAvailable(false);
-        wheelSpinner.Spin();
+
+        // Decide first, then let the wheel rotate to the slice that was chosen.
+        int sliceCount = currentWheel.Slices.Count;
+        winningSliceIndex = spinResolver.PickSliceIndex(sliceCount);
+        wheelSpinner.SpinTo(winningSliceIndex, sliceCount);
     }
 
-    private void HandleSpinCompleted(SliceData slice)
+    private void HandleSpinCompleted()
     {
+        SliceData slice = currentWheel.Slices[winningSliceIndex];
         isShowingResult = true;
         StartCoroutine(slice.IsBomb ? PlayBombSequence() : PlayRewardSequence(slice));
     }
@@ -81,10 +92,9 @@ public class GameController : MonoBehaviour
     // Flash and punch the winning slice, fly its icon into the panel, and only then add the reward and advance.
     private IEnumerator PlayRewardSequence(SliceData slice)
     {
-        int sliceIndex = wheelSpinner.WinningIndex;
-        Vector3 iconStart = wheelView.GetSlicePosition(sliceIndex);
+        Vector3 iconStart = wheelView.GetSlicePosition(winningSliceIndex);
 
-        yield return wheelView.PlayWinEffect(sliceIndex).WaitForCompletion();
+        yield return wheelView.PlayWinEffect(winningSliceIndex).WaitForCompletion();
 
         Transform flyTarget = rewardList.GetFlyTarget(slice.Reward.Type);
         yield return rewardFly.Fly(slice.Reward.Type.Icon, iconStart, flyTarget).WaitForCompletion();
@@ -106,10 +116,9 @@ public class GameController : MonoBehaviour
     private void ShowZone(bool animate)
     {
         ZoneType type = zoneRules.GetZoneType(currentZone);
-        WheelSO wheel = zoneConfig.GetWheel(type);
+        currentWheel = zoneConfig.GetWheel(type);
 
-        wheelView.Show(wheel, zoneRules, currentZone);
-        wheelSpinner.SetWheel(wheel);
+        wheelView.Show(currentWheel, zoneRules, currentZone);
         zoneBar.Show(currentZone, zoneRules, animate);
         UpdateLeaveButton();
     }
