@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7448806698535268032}
   - component: {fileID: 3992755037464122438}
   m_Layer: 0
-  m_Name: ui_image_reward_fly
+  m_Name: ui_image_reward_fly_value
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

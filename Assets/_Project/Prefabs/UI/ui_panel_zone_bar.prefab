@@ -454,8 +454,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d4729865b73c4d1ba08cdef199a4a7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZoneBarView
-  strip: {fileID: 5989117826493149862}
-  zoneTexts:
+  _strip: {fileID: 5989117826493149862}
+  _zoneTexts:
   - {fileID: 6146146222998332623}
   - {fileID: 1711609520429492294}
   - {fileID: 4885297863509296326}
@@ -465,14 +465,10 @@ MonoBehaviour:
   - {fileID: 5356494784274878254}
   - {fileID: 2708846545476040501}
   - {fileID: 2640578507209126280}
-  nextSuperZoneText: {fileID: 0}
-  nextSafeZoneText: {fileID: 0}
-  cellWidth: 100
-  slideDuration: 0.3
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  safeColor: {r: 0.24313726, g: 0.8784314, b: 0.47843137, a: 1}
-  superColor: {r: 1, g: 0.78431374, b: 0.23921569, a: 1}
-  pastZoneAlpha: 0.4
+  _upcomingZoneLabels: []
+  _cellWidth: 100
+  _slideDuration: 0.3
+  _pastZoneAlpha: 0.4
 --- !u!1 &4436450844324770659
 GameObject:
   m_ObjectHideFlags: 0
@@ -484,7 +480,7 @@ GameObject:
   - component: {fileID: 5989117826493149862}
   - component: {fileID: 4626975644367592475}
   m_Layer: 0
-  m_Name: ui_zone_strip
+  m_Name: ui_layout_zone_strip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

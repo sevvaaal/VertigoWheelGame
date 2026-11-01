@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3294878640633731794}
   - component: {fileID: 4282755322883880704}
   m_Layer: 0
-  m_Name: ui_collect_rows
+  m_Name: ui_layout_collect_rows
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -762,8 +762,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67e402e0ac2744625a80422cee1fdc7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollectPopup
-  panel: {fileID: 1108106854804353177}
-  popDuration: 0.3
-  playAgainButton: {fileID: 9058847758569700637}
-  rowContainer: {fileID: 3294878640633731794}
-  rowPrefab: {fileID: 124366044137184607, guid: 744ee5c1010d8492881430dc24faebed, type: 3}
+  _panel: {fileID: 1108106854804353177}
+  _popDuration: 0.3
+  _playAgainButton: {fileID: 9058847758569700637}
+  _rowContainer: {fileID: 3294878640633731794}
+  _rowPrefab: {fileID: 124366044137184607, guid: 744ee5c1010d8492881430dc24faebed, type: 3}

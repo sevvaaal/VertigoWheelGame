@@ -7,9 +7,14 @@ namespace Vertigo.Tests.EditMode
     {
         #region Test Events
 
-        private struct NumberEvent : IGameEvent
+        private readonly struct NumberEvent : IGameEvent
         {
-            public int Value;
+            public NumberEvent(int value)
+            {
+                Value = value;
+            }
+
+            public int Value { get; }
         }
 
         private struct OtherEvent : IGameEvent
@@ -45,7 +50,7 @@ namespace Vertigo.Tests.EditMode
         {
             _bus.Subscribe<NumberEvent>(HandleNumber);
 
-            _bus.Publish(new NumberEvent { Value = 7 });
+            _bus.Publish(new NumberEvent(7));
 
             Assert.AreEqual(1, _receivedCount);
             Assert.AreEqual(7, _receivedValue);
@@ -57,7 +62,7 @@ namespace Vertigo.Tests.EditMode
             _bus.Subscribe<NumberEvent>(HandleNumber);
             _bus.Unsubscribe<NumberEvent>(HandleNumber);
 
-            _bus.Publish(new NumberEvent { Value = 7 });
+            _bus.Publish(new NumberEvent(7));
 
             Assert.AreEqual(0, _receivedCount);
         }
@@ -90,7 +95,7 @@ namespace Vertigo.Tests.EditMode
 
         private void PublishNumber()
         {
-            _bus.Publish(new NumberEvent { Value = 1 });
+            _bus.Publish(new NumberEvent(1));
         }
 
         #endregion
