@@ -187,6 +187,3 @@ Assets/_Project/
 ## Android build notes
 - IL2CPP, ARM64, landscape only (both landscape sides). Version 2.0 (version code 2).
 - Graphics APIs: **OpenGL ES 3 first, Vulkan second.** The Android emulator on macOS showed a blank screen with Vulkan; OpenGL ES 3 works on the emulator and on every phone.
-
-## Not included
-- **Continue with currency after a bomb** (optional bonus in the case): not implemented. The wallet already supports it, since `Wallet.TrySpend` takes only currencies.
