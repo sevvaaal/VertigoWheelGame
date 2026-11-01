@@ -34,6 +34,19 @@ namespace Vertigo.Tests.EditMode
             Assert.AreNotEqual(normal.GetWheel(10), normal.GetWheel(20));
         }
 
+        // The validation only checks that wheels match their zone type's bomb count; this pins the counts themselves.
+        [Test]
+        public void ProjectZoneConfig_OnlyNormalZonesHaveABomb()
+        {
+            ZoneConfigSO config = AssetDatabase.LoadAssetAtPath<ZoneConfigSO>(ZONE_CONFIG_PATH);
+
+            Assert.AreEqual(1, config.DefaultZoneType.RequiredBombCount);
+            foreach (ZoneTypeSO specialZoneType in config.SpecialZoneTypes)
+            {
+                Assert.AreEqual(0, specialZoneType.RequiredBombCount, $"{specialZoneType.name} must have no bomb.");
+            }
+        }
+
         #endregion
     }
 }

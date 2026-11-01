@@ -40,6 +40,11 @@ namespace Vertigo.Data
             get { return _interval; }
         }
 
+        public int RequiredBombCount
+        {
+            get { return _requiredBombCount; }
+        }
+
         public Color Color
         {
             get { return _color; }

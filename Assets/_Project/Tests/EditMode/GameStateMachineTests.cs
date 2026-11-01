@@ -109,6 +109,19 @@ namespace Vertigo.Tests.EditMode
         }
 
         [Test]
+        public void CanRestart_OnlyAfterBustOrLeave()
+        {
+            Assert.IsFalse(_stateMachine.CanRestart);
+
+            _stateMachine.TryStartSpin();
+            _stateMachine.ShowResult();
+            Assert.IsFalse(_stateMachine.CanRestart);
+
+            _stateMachine.Bust();
+            Assert.IsTrue(_stateMachine.CanRestart);
+        }
+
+        [Test]
         public void TryRestart_WhileIdle_ReturnsFalse()
         {
             Assert.IsFalse(_stateMachine.TryRestart());

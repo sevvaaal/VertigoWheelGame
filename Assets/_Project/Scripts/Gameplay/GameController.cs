@@ -18,7 +18,7 @@ namespace Vertigo.Gameplay
         private ISpinResolver _spinResolver;
         private IWheelSpinner _wheelSpinner;
         private ISpinResultPresenter _resultPresenter;
-        private RunProgress _runProgress;
+        private IRunProgress _runProgress;
         private IRunInventory _runInventory;
         private IWallet _wallet;
         private int _winningSliceIndex;
@@ -54,7 +54,7 @@ namespace Vertigo.Gameplay
         #region Public Methods
 
         public void Construct(IEventBus eventBus, GameStateMachine stateMachine, ISpinResolver spinResolver,
-            IWheelSpinner wheelSpinner, ISpinResultPresenter resultPresenter, RunProgress runProgress,
+            IWheelSpinner wheelSpinner, ISpinResultPresenter resultPresenter, IRunProgress runProgress,
             IRunInventory runInventory, IWallet wallet)
         {
             _eventBus = eventBus;
@@ -114,15 +114,16 @@ namespace Vertigo.Gameplay
 
         private void HandleRestartRequested(RestartRequestedEvent restartRequested)
         {
-            if (!_stateMachine.TryRestart())
+            if (!_stateMachine.CanRestart)
             {
                 return;
             }
 
-            StopResultCoroutine();
+            // Same order as Leave: the run is reset before the state changes, so the views show a clean run when Spin turns on.
             _runInventory.Clear();
             _runProgress.Reset();
             PublishZone(false);
+            _stateMachine.TryRestart();
         }
 
         #endregion

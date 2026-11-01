@@ -19,7 +19,7 @@ All three are the same moment of one Android run (zone 5, a safe zone), captured
 - A reward is added to the run's rewards panel and you move to the next zone. Rewards get better as the run goes on: **better wheels** unlock at later zones (see [Reward progression](#reward-progression)), and amounts grow +10% per zone.
 - **Every 5th zone** is a **safe zone**: a silver wheel without a bomb. **Every 30th zone** is a **super zone**: a golden wheel without a bomb and with special rewards.
 - **Bomb:** everything collected in this run is lost. **Restart** starts again from zone 1.
-- **Leave:** walk away with this run's rewards whenever the wheel is still. They go into the **wallet**, which is kept across runs. The wallet panel lists currencies (Gold, Cash); collected items are kept in the wallet too, separately.
+- **Leave:** walk away with this run's rewards whenever the wheel is still. They go into the **wallet**, which is kept across runs while the app is open. The wallet panel lists currencies (Gold, Cash); collected items are kept in the wallet too, separately.
 
 ## How to run
 - **Editor:** open `Assets/_Project/Scenes/GameScene` and press Play. Designed for landscape 1920x1080, scales to any landscape ratio.
@@ -47,20 +47,20 @@ All three are the same moment of one Android run (zone 5, a safe zone), captured
 | **Spin result** | `SpinResolver` picks the winning slice from an injected `IRandomSource` (`UnityRandomSource` in the game, a fake in tests). `WheelSpinner` only rotates to the index it is given. Tested in `SpinResolverTests` and `GameFlowTests`. |
 | **State machine** | `GameStateMachine`, as above. `Try…` methods are for player input (a click in the wrong state is ignored); flow methods throw on a wrong state, because that would be a bug. |
 | **Zone definitions** | Zone types are `ZoneTypeSO` assets (interval, bomb count, color, wheel tiers) in `ZoneConfig`'s priority list, plus a default type. `ZoneRules`, the zone bar colors and the "next … zone" labels all read that data. There is no enum, if-chain or switch, so **a new zone type is a new asset in the list**. |
-| **Dependency direction** | `GameController` has no Inspector fields. It receives `ISpinResolver`, `IWheelSpinner`, `ISpinResultPresenter`, `IRunInventory` and `IWallet` (plus `RunProgress` and `GameStateMachine`) through `Construct`. `GameBootstrapper` is the one place that creates and connects everything. |
+| **Dependency direction** | `GameController` has no Inspector fields. It receives `ISpinResolver`, `IWheelSpinner`, `ISpinResultPresenter`, `IRunProgress` (which reaches the rules through `IZoneRules`), `IRunInventory` and `IWallet`, plus the `GameStateMachine`, through `Construct`. `GameBootstrapper` is the one place that creates and connects everything. |
 | **Responsibilities** | Views do no game math: `RunProgress` computes the slice amounts and the zone bar contents (`ZoneBarModel`), and views receive them in `ZoneChangedEvent`. The controller only runs the flow. Result effects live in `SpinResultPresenter`, rules in `ZoneRules`, run state in `RunProgress`, number text in `NumberFormatter`. |
-| **Event manager** | `EventBus` with type-safe `Subscribe<T>`, `Unsubscribe<T>` and `Publish<T>` (`T : struct, IGameEvent`). All communication between classes goes through it. Tested in `EventBusTests`. |
-| **Wallet** | `Wallet` receives the rewards on Leave, keeps **currencies and items apart** by each reward type's kind, holds any number of currencies, and allows spending only currencies (`TrySpend`). It is kept across runs. Tested in `WalletTests` and `GameFlowTests`. |
+| **Event manager** | `EventBus` with type-safe `Subscribe<T>`, `Unsubscribe<T>` and `Publish<T>` (`T : struct, IGameEvent`). Views and the game flow talk to each other only through it; the controller calls the services it is given directly. Tested in `EventBusTests`. |
+| **Wallet** | `Wallet` receives the rewards on Leave, keeps **currencies and items apart** by each reward type's kind, holds any number of currencies, and allows spending only currencies (`TrySpend`). It is kept across runs while the app is open (not saved to disk). Tested in `WalletTests` and `GameFlowTests`. |
 
 ### D. Lifecycle and correctness
 | Criterion | How it is met |
 |---|---|
 | **Subscribe / unsubscribe** | Every `Subscribe` (in `Construct`) has an `Unsubscribe` in `OnDestroy`, and every `AddListener` (in `Awake`) has a `RemoveListener` in `OnDestroy`. |
 | **Tweens** | Every tween, including the infinite glow loops, is stored in a field and killed in `OnDestroy`. |
-| **Coroutines** | The result sequence is stored in `_resultCoroutine` and stopped with `StopCoroutine` on Restart and in `OnDestroy`. |
+| **Coroutines** | The result sequence is stored in `_resultCoroutine` and stopped with `StopCoroutine` in `OnDestroy`. Restart is only allowed after the sequence has finished (`Busted` or `Collected`), and it resets the run before the state changes, in the same order as Leave. |
 | **Callbacks** | No lambdas anywhere; tween and event callbacks are named methods (e.g. `HandleFlightComplete`). |
 | **Null checks** | Unity objects are checked with `if (obj)`. Every component with Inspector references checks them in `OnValidate` (`ReferenceValidator`), so a missing one is an error in the Console that selects the object when clicked. `UIChildFinder` reports a missing child as an error, and callers check its result. |
-| **Inspector bounds** | All 27 serialized numbers have `[Min]` or `[Range]`. A zone interval below 1 is rejected (`ZoneRules` constructor, tested), so no Inspector value can crash the game. |
+| **Inspector bounds** | All 27 serialized numbers have `[Min]` or `[Range]`. Setups that would break the game stop it before it starts, with an error: a zone interval below 1 (`ZoneRules`, tested), a wrong bomb count or a missing wheel (config validation), an empty zone bar (`GameBootstrapper`). Half-filled lists in the Inspector are reported in the editor and skipped at runtime. Popups and panels set themselves up in `Construct`, so they also work if saved inactive in the scene. |
 
 ### E. Code standards
 | Criterion | How it is met |
@@ -78,7 +78,7 @@ All three are the same moment of one Android run (zone 5, a safe zone), captured
 |---|---|
 | **Branch** | All revision work was done on the `revision` branch and merged into `main` through a pull request. |
 | **Repo cleanup** | TextMesh Pro examples, the unused `InputSystem_Actions` template and the test-only `startZone` field are removed. |
-| **Tests** | **70 EditMode + 6 PlayMode tests.** The PlayMode tests run the real `GameController` with the real `ZoneConfig`: spin result, bomb flow, restart, Leave rule and wallet. |
+| **Tests** | **72 EditMode + 6 PlayMode tests.** The PlayMode tests run the real `GameController` with the real `ZoneConfig`: spin result, bomb flow, restart, Leave rule and wallet. |
 | **Release** | New [Release v2.0](https://github.com/sevvaaal/VertigoWheelGame/releases) with the APK; new gameplay video and screenshots at all three ratios. |
 
 ## Architecture

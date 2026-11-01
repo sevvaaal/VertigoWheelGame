@@ -6,7 +6,7 @@ namespace Vertigo.Gameplay
 {
     // Where the player is in the run, and everything that follows from it: the wheel, the scaled rewards,
     // and the numbers the views show. Plain C#, so it is tested without a scene.
-    public sealed class RunProgress
+    public sealed class RunProgress : IRunProgress
     {
         #region Constants
 

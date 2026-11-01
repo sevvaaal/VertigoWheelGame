@@ -39,11 +39,6 @@ namespace Vertigo.UI
             ReferenceValidator.Require(this, _panel, nameof(_panel));
         }
 
-        protected virtual void Awake()
-        {
-            gameObject.SetActive(false);
-        }
-
         // Subscriptions are tied to Construct and OnDestroy, not OnEnable/OnDisable:
         // a hidden popup is inactive, but it still has to hear the event that shows it.
         protected virtual void OnDestroy()
@@ -60,10 +55,14 @@ namespace Vertigo.UI
 
         #region Public Methods
 
+        // Set up and hidden here, not in Awake: Awake only runs once the object is active, so a popup saved
+        // inactive in the scene would otherwise miss its setup and hide itself again the first time it is shown.
         public void Construct(IEventBus eventBus)
         {
             EventBus = eventBus;
+            Initialize();
             Subscribe();
+            Hide();
         }
 
         #endregion
@@ -71,6 +70,11 @@ namespace Vertigo.UI
         #region Protected Methods
 
         protected abstract bool ShouldShow(GameState state);
+
+        // Runs in Construct, before the popup can receive any event.
+        protected virtual void Initialize()
+        {
+        }
 
         protected virtual void Subscribe()
         {

@@ -70,7 +70,6 @@ namespace Vertigo.Economy
             }
         }
 
-        // Ready for spending currency, e.g. the optional "continue after a bomb" bonus.
         public bool TrySpend(RewardTypeSO currency, int amount)
         {
             if (!currency || currency.Kind != RewardKind.Currency)

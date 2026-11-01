@@ -36,11 +36,6 @@ namespace Vertigo.UI
             ReferenceValidator.Require(this, _rowPrefab, nameof(_rowPrefab));
         }
 
-        private void Awake()
-        {
-            _rowPool = new RewardRowPool(_rowPrefab, _rowContainer);
-        }
-
         private void OnDestroy()
         {
             if (_eventBus == null)
@@ -58,6 +53,8 @@ namespace Vertigo.UI
 
         public void Construct(IEventBus eventBus)
         {
+            // Created here rather than in Awake, so the pool exists before the first event even if the panel starts inactive.
+            _rowPool = new RewardRowPool(_rowPrefab, _rowContainer);
             _eventBus = eventBus;
             _eventBus.Subscribe<RunRewardChangedEvent>(HandleRunRewardChanged);
             _eventBus.Subscribe<RunRewardsClearedEvent>(HandleRunRewardsCleared);

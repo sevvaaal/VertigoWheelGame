@@ -73,6 +73,11 @@ namespace Vertigo.Gameplay
             get { return CanFire(Trigger.Leave); }
         }
 
+        public bool CanRestart
+        {
+            get { return CanFire(Trigger.Restart); }
+        }
+
         #endregion
 
         #region Public Methods

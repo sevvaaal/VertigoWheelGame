@@ -46,16 +46,12 @@ namespace Vertigo.UI
             ReferenceValidator.Require(this, _rowPrefab, nameof(_rowPrefab));
         }
 
-        protected override void Awake()
+        private void Awake()
         {
-            _rowPool = new RewardRowPool(_rowPrefab, _rowContainer);
-
             if (_playAgainButton)
             {
                 _playAgainButton.onClick.AddListener(HandlePlayAgainClicked);
             }
-
-            base.Awake();
         }
 
         protected override void OnDestroy()
@@ -75,6 +71,11 @@ namespace Vertigo.UI
         protected override bool ShouldShow(GameState state)
         {
             return state == GameState.Collected;
+        }
+
+        protected override void Initialize()
+        {
+            _rowPool = new RewardRowPool(_rowPrefab, _rowContainer);
         }
 
         protected override void Subscribe()

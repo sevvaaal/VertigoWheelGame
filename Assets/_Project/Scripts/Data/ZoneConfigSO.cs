@@ -18,7 +18,7 @@ namespace Vertigo.Data
         [SerializeField] private ZoneTypeSO _defaultZoneType;
 
         [FormerlySerializedAs("rewardGrowthPerZone")]
-        [Min(0f)]
+        [Range(0f, 1f)]
         [SerializeField] private float _rewardGrowthPerZone = 0.1f;
 
         #endregion

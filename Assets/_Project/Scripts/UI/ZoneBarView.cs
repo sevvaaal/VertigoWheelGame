@@ -86,6 +86,12 @@ namespace Vertigo.UI
             {
                 ReferenceValidator.Require(this, _zoneTexts[i], $"{nameof(_zoneTexts)}[{i}]");
             }
+
+            for (int i = 0; i < _upcomingZoneLabels.Count; i++)
+            {
+                ReferenceValidator.Require(this, _upcomingZoneLabels[i].ZoneType, $"{nameof(_upcomingZoneLabels)}[{i}].ZoneType");
+                ReferenceValidator.Require(this, _upcomingZoneLabels[i].Text, $"{nameof(_upcomingZoneLabels)}[{i}].Text");
+            }
         }
 
         private void OnDestroy()
@@ -121,6 +127,12 @@ namespace Vertigo.UI
                 ZoneBarModel.Cell cell = model.Cells[i];
                 TMP_Text text = _zoneTexts[i];
 
+                // Missing entries are already reported in OnValidate; skipping them keeps the game running.
+                if (!text)
+                {
+                    continue;
+                }
+
                 if (cell.IsEmpty)
                 {
                     text.text = string.Empty;
@@ -139,6 +151,11 @@ namespace Vertigo.UI
 
             foreach (UpcomingZoneLabel label in _upcomingZoneLabels)
             {
+                if (!label.ZoneType || !label.Text)
+                {
+                    continue;
+                }
+
                 if (model.NextZones.TryGetValue(label.ZoneType, out int nextZone))
                 {
                     label.Text.text = $"{label.ZoneType.DisplayName} {nextZone}";

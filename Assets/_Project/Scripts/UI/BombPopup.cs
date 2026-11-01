@@ -29,14 +29,12 @@ namespace Vertigo.UI
             _restartButton = UIChildFinder.Find<Button>(transform, RESTART_BUTTON_NAME);
         }
 
-        protected override void Awake()
+        private void Awake()
         {
             if (_restartButton)
             {
                 _restartButton.onClick.AddListener(HandleRestartClicked);
             }
-
-            base.Awake();
         }
 
         protected override void OnDestroy()

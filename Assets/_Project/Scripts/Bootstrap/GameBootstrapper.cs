@@ -52,8 +52,8 @@ namespace Vertigo.Bootstrap
 
         private void Awake()
         {
-            // A broken config (wrong bomb count, missing wheel...) must never reach the player: stop before anything starts.
-            if (!IsConfigValid())
+            // A broken setup (wrong bomb count, missing wheel, empty zone bar...) must never reach the player: stop before anything starts.
+            if (!IsSetupValid())
             {
                 _gameController.gameObject.SetActive(false);
                 _spinButton.gameObject.SetActive(false);
@@ -86,8 +86,14 @@ namespace Vertigo.Bootstrap
 
         #region Private Methods
 
-        private bool IsConfigValid()
+        private bool IsSetupValid()
         {
+            if (!_zoneBar || _zoneBar.CellCount < 1)
+            {
+                Debug.LogError($"{name}: the zone bar needs at least one zone cell.", this);
+                return false;
+            }
+
             if (!_zoneConfig)
             {
                 Debug.LogError($"{name}: no zone config assigned.", this);
