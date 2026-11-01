@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28a109ba795eb4d5bb192db4dbc3aca9, type: 3}
   m_Name: Gold
   m_EditorClassIdentifier: Assembly-CSharp::RewardTypeSO
-  displayName: Gold
-  icon: {fileID: 952800183794916973, guid: 0976f7e78d9cf4949b2d38663012aaba, type: 3}
+  _displayName: Gold
+  _icon: {fileID: 952800183794916973, guid: 0976f7e78d9cf4949b2d38663012aaba, type: 3}
+  _kind: 1

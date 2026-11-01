@@ -1,46 +1,96 @@
-using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Vertigo.Core;
+using Vertigo.Gameplay;
 
-// A game button (Spin, Leave). It only turns itself on or off and announces clicks;
-// the GameController decides when each action is allowed and what it does.
-[RequireComponent(typeof(Button))]
-public class ButtonView : MonoBehaviour
+namespace Vertigo.UI
 {
-    [SerializeField] private Button button;
-    [SerializeField] private float unavailableAlpha = 0.4f;
-
-    // Fades the button and its text together, so "not available right now" is obvious.
-    private CanvasGroup canvasGroup;
-
-    public event Action Clicked;
-
-    // The button is on this same object, so it is found automatically instead of being dragged in.
-    private void OnValidate()
+    // Shared behaviour of the game's buttons. Each child only says what it publishes and when it is available.
+    [RequireComponent(typeof(Button), typeof(CanvasGroup))]
+    public abstract class ButtonView : MonoBehaviour
     {
-        button = GetComponent<Button>();
-    }
+        #region Serialized Fields
 
-    private void Awake()
-    {
-        button.onClick.AddListener(HandleClicked);
-    }
+        [FormerlySerializedAs("button")]
+        [SerializeField] private Button _button;
 
-    public void SetAvailable(bool isAvailable)
-    {
-        button.interactable = isAvailable;
+        // Fades the button and its label together, so "not available right now" is obvious.
+        [SerializeField] private CanvasGroup _canvasGroup;
 
-        // Fetched here rather than in Awake: the GameController may call this before this button's Awake has run.
-        if (canvasGroup == null && !TryGetComponent(out canvasGroup))
+        [FormerlySerializedAs("unavailableAlpha")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _unavailableAlpha = 0.4f;
+
+        #endregion
+
+        #region Fields
+
+        private IEventBus _eventBus;
+
+        #endregion
+
+        #region Unity Methods
+
+        private void OnValidate()
         {
-            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            _button = GetComponent<Button>();
+            _canvasGroup = GetComponent<CanvasGroup>();
+            ReferenceValidator.Require(this, _canvasGroup, nameof(_canvasGroup));
         }
 
-        canvasGroup.alpha = isAvailable ? 1f : unavailableAlpha;
-    }
+        private void Awake()
+        {
+            _button.onClick.AddListener(HandleClicked);
+        }
 
-    private void HandleClicked()
-    {
-        Clicked?.Invoke();
+        private void OnDestroy()
+        {
+            if (_button)
+            {
+                _button.onClick.RemoveListener(HandleClicked);
+            }
+
+            if (_eventBus != null)
+            {
+                _eventBus.Unsubscribe<GameStateChangedEvent>(HandleStateChanged);
+            }
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public void Construct(IEventBus eventBus)
+        {
+            _eventBus = eventBus;
+            _eventBus.Subscribe<GameStateChangedEvent>(HandleStateChanged);
+        }
+
+        #endregion
+
+        #region Abstract Methods
+
+        protected abstract void PublishClick(IEventBus eventBus);
+
+        protected abstract bool IsAvailable(GameStateChangedEvent stateChanged);
+
+        #endregion
+
+        #region Private Methods
+
+        private void HandleClicked()
+        {
+            PublishClick(_eventBus);
+        }
+
+        private void HandleStateChanged(GameStateChangedEvent stateChanged)
+        {
+            bool isAvailable = IsAvailable(stateChanged);
+            _button.interactable = isAvailable;
+            _canvasGroup.alpha = isAvailable ? 1f : _unavailableAlpha;
+        }
+
+        #endregion
     }
 }

@@ -1,23 +1,50 @@
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-[System.Serializable]
-public class Reward
+namespace Vertigo.Data
 {
-    [SerializeField] private RewardTypeSO type;
-    [SerializeField] private int amount;
-
-    public RewardTypeSO Type => type;
-    public int Amount => amount;
-
-    // Used by Unity when it loads rewards from wheel assets.
-    public Reward()
+    [Serializable]
+    public class Reward
     {
-    }
+        #region Serialized Fields
 
-    // Used by the game to create a reward with a zone-scaled amount.
-    public Reward(RewardTypeSO type, int amount)
-    {
-        this.type = type;
-        this.amount = amount;
+        [FormerlySerializedAs("type")]
+        [SerializeField] private RewardTypeSO _type;
+
+        [FormerlySerializedAs("amount")]
+        [Min(1)]
+        [SerializeField] private int _amount = 1;
+
+        #endregion
+
+        #region Constructors
+
+        // Unity needs this one to load rewards from wheel assets.
+        public Reward()
+        {
+        }
+
+        public Reward(RewardTypeSO type, int amount)
+        {
+            _type = type;
+            _amount = amount;
+        }
+
+        #endregion
+
+        #region Properties
+
+        public RewardTypeSO Type
+        {
+            get { return _type; }
+        }
+
+        public int Amount
+        {
+            get { return _amount; }
+        }
+
+        #endregion
     }
 }
