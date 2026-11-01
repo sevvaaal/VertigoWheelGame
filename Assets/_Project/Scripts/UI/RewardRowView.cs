@@ -37,6 +37,12 @@ namespace Vertigo.UI
 
         #region Unity Methods
 
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _iconImage, nameof(_iconImage));
+            ReferenceValidator.Require(this, _amountText, nameof(_amountText));
+        }
+
         private void OnDestroy()
         {
             _countTween?.Kill();
@@ -50,6 +56,16 @@ namespace Vertigo.UI
         public void Setup(Sprite icon)
         {
             _iconImage.sprite = icon;
+        }
+
+        // Called when the row goes back to its pool, so its next use starts from zero.
+        public void ResetRow()
+        {
+            _countTween?.Kill();
+            _punchTween?.Kill();
+            _displayedAmount = 0;
+            _amountText.text = string.Empty;
+            _iconImage.rectTransform.localScale = Vector3.one;
         }
 
         // Rolls the number up from what is shown now to the new total, and gives the icon a small pop.

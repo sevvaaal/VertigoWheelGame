@@ -79,6 +79,15 @@ namespace Vertigo.UI
 
         #region Unity Methods
 
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _strip, nameof(_strip));
+            for (int i = 0; i < _zoneTexts.Count; i++)
+            {
+                ReferenceValidator.Require(this, _zoneTexts[i], $"{nameof(_zoneTexts)}[{i}]");
+            }
+        }
+
         private void OnDestroy()
         {
             _slideTween?.Kill();

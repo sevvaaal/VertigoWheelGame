@@ -1,6 +1,7 @@
 using System.Collections;
 using DG.Tweening;
 using UnityEngine;
+using Vertigo.Core;
 using Vertigo.Data;
 using Vertigo.Gameplay;
 
@@ -14,6 +15,17 @@ namespace Vertigo.UI
         [SerializeField] private WheelView _wheelView;
         [SerializeField] private RewardListView _rewardList;
         [SerializeField] private RewardFlyEffect _rewardFly;
+
+        #endregion
+
+        #region Unity Methods
+
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _wheelView, nameof(_wheelView));
+            ReferenceValidator.Require(this, _rewardList, nameof(_rewardList));
+            ReferenceValidator.Require(this, _rewardFly, nameof(_rewardFly));
+        }
 
         #endregion
 

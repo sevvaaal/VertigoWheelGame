@@ -43,6 +43,11 @@ namespace Vertigo.UI
 
         #region Unity Methods
 
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _wheel, nameof(_wheel));
+        }
+
         private void OnDestroy()
         {
             _spinTween?.Kill();

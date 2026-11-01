@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Vertigo.Core;
 using Vertigo.Data;
 using Vertigo.Gameplay;
 
@@ -31,19 +32,29 @@ namespace Vertigo.UI
         #region Fields
 
         private readonly List<RewardRowView> _rows = new List<RewardRowView>();
+        private RewardRowPool _rowPool;
 
         #endregion
 
         #region Unity Methods
 
-        private void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
             _playAgainButton = UIChildFinder.Find<Button>(transform, PLAY_AGAIN_BUTTON_NAME);
+            ReferenceValidator.Require(this, _rowContainer, nameof(_rowContainer));
+            ReferenceValidator.Require(this, _rowPrefab, nameof(_rowPrefab));
         }
 
         protected override void Awake()
         {
-            _playAgainButton.onClick.AddListener(HandlePlayAgainClicked);
+            _rowPool = new RewardRowPool(_rowPrefab, _rowContainer);
+
+            if (_playAgainButton)
+            {
+                _playAgainButton.onClick.AddListener(HandlePlayAgainClicked);
+            }
+
             base.Awake();
         }
 
@@ -89,8 +100,7 @@ namespace Vertigo.UI
 
             foreach (KeyValuePair<RewardTypeSO, int> reward in rewardsCollected.Rewards)
             {
-                RewardRowView row = Instantiate(_rowPrefab, _rowContainer);
-                row.Setup(reward.Key.Icon);
+                RewardRowView row = _rowPool.Get(reward.Key.Icon);
                 row.SetAmount(reward.Value);
                 _rows.Add(row);
             }
@@ -100,7 +110,7 @@ namespace Vertigo.UI
         {
             foreach (RewardRowView row in _rows)
             {
-                Destroy(row.gameObject);
+                _rowPool.Release(row);
             }
 
             _rows.Clear();

@@ -36,6 +36,7 @@ namespace Vertigo.UI
         {
             _button = GetComponent<Button>();
             _canvasGroup = GetComponent<CanvasGroup>();
+            ReferenceValidator.Require(this, _canvasGroup, nameof(_canvasGroup));
         }
 
         private void Awake()

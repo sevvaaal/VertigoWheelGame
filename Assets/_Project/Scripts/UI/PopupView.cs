@@ -34,6 +34,11 @@ namespace Vertigo.UI
 
         #region Unity Methods
 
+        protected virtual void OnValidate()
+        {
+            ReferenceValidator.Require(this, _panel, nameof(_panel));
+        }
+
         protected virtual void Awake()
         {
             gameObject.SetActive(false);

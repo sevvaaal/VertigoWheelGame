@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Vertigo.Core;
 using Vertigo.Gameplay;
 
 namespace Vertigo.UI
@@ -22,14 +23,19 @@ namespace Vertigo.UI
 
         #region Unity Methods
 
-        private void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
             _restartButton = UIChildFinder.Find<Button>(transform, RESTART_BUTTON_NAME);
         }
 
         protected override void Awake()
         {
-            _restartButton.onClick.AddListener(HandleRestartClicked);
+            if (_restartButton)
+            {
+                _restartButton.onClick.AddListener(HandleRestartClicked);
+            }
+
             base.Awake();
         }
 

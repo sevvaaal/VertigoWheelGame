@@ -20,6 +20,16 @@ namespace Vertigo.UI
 
         #endregion
 
+        #region Unity Methods
+
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _iconImage, nameof(_iconImage));
+            ReferenceValidator.Require(this, _amountText, nameof(_amountText));
+        }
+
+        #endregion
+
         #region Public Methods
 
         public void Setup(SliceData slice, Sprite bombIcon, int amount)

@@ -90,6 +90,16 @@ namespace Vertigo.UI
 
         #region Unity Methods
 
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _baseImage, nameof(_baseImage));
+            ReferenceValidator.Require(this, _indicatorImage, nameof(_indicatorImage));
+            ReferenceValidator.Require(this, _sliceContainer, nameof(_sliceContainer));
+            ReferenceValidator.Require(this, _slicePrefab, nameof(_slicePrefab));
+            ReferenceValidator.Require(this, _glow, nameof(_glow));
+            ReferenceValidator.Require(this, _flash, nameof(_flash));
+        }
+
         private void Start()
         {
             _glowTurnTween = _glow.DORotate(new Vector3(0f, 0f, FULL_TURN_DEGREES), _glowTurnDuration, RotateMode.FastBeyond360)

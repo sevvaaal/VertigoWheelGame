@@ -34,6 +34,22 @@ namespace Vertigo.Bootstrap
 
         #region Unity Methods
 
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _zoneConfig, nameof(_zoneConfig));
+            ReferenceValidator.Require(this, _gameController, nameof(_gameController));
+            ReferenceValidator.Require(this, _wheelSpinner, nameof(_wheelSpinner));
+            ReferenceValidator.Require(this, _wheelView, nameof(_wheelView));
+            ReferenceValidator.Require(this, _zoneBar, nameof(_zoneBar));
+            ReferenceValidator.Require(this, _resultPresenter, nameof(_resultPresenter));
+            ReferenceValidator.Require(this, _spinButton, nameof(_spinButton));
+            ReferenceValidator.Require(this, _leaveButton, nameof(_leaveButton));
+            ReferenceValidator.Require(this, _bombPopup, nameof(_bombPopup));
+            ReferenceValidator.Require(this, _collectPopup, nameof(_collectPopup));
+            ReferenceValidator.Require(this, _rewardList, nameof(_rewardList));
+            ReferenceValidator.Require(this, _walletView, nameof(_walletView));
+        }
+
         private void Awake()
         {
             // A broken config (wrong bomb count, missing wheel...) must never reach the player: stop before anything starts.

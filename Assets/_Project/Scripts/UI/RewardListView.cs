@@ -23,11 +23,23 @@ namespace Vertigo.UI
         #region Fields
 
         private readonly Dictionary<RewardTypeSO, RewardRowView> _rows = new Dictionary<RewardTypeSO, RewardRowView>();
+        private RewardRowPool _rowPool;
         private IEventBus _eventBus;
 
         #endregion
 
         #region Unity Methods
+
+        private void OnValidate()
+        {
+            ReferenceValidator.Require(this, _rowContainer, nameof(_rowContainer));
+            ReferenceValidator.Require(this, _rowPrefab, nameof(_rowPrefab));
+        }
+
+        private void Awake()
+        {
+            _rowPool = new RewardRowPool(_rowPrefab, _rowContainer);
+        }
 
         private void OnDestroy()
         {
@@ -65,8 +77,7 @@ namespace Vertigo.UI
         {
             if (!_rows.TryGetValue(rewardChanged.Type, out RewardRowView row))
             {
-                row = Instantiate(_rowPrefab, _rowContainer);
-                row.Setup(rewardChanged.Type.Icon);
+                row = _rowPool.Get(rewardChanged.Type.Icon);
                 _rows[rewardChanged.Type] = row;
             }
 
@@ -77,7 +88,7 @@ namespace Vertigo.UI
         {
             foreach (RewardRowView row in _rows.Values)
             {
-                Destroy(row.gameObject);
+                _rowPool.Release(row);
             }
 
             _rows.Clear();
